@@ -1,0 +1,50 @@
+{
+  "name": "DAO-Example",
+  "version": "1.0.0",
+  "main": "index.js",
+  "repository": "https://github.com/touqeerShah/DAO-Example.git",
+  "author": "s.touqeer@pharmatrace.io <s.touqeer@pharmatrace.io>",
+  "license": "MIT",
+  "devDependencies": {
+    "@ethersproject/abi": "^5.4.7",
+    "@ethersproject/providers": "^5.4.7",
+    "@nomicfoundation/hardhat-chai-matchers": "^1.0.0",
+    "@nomicfoundation/hardhat-network-helpers": "^1.0.0",
+    "@nomicfoundation/hardhat-toolbox": "^2.0.0",
+    "@nomiclabs/hardhat-ethers": "npm:hardhat-deploy-ethers",
+    "@nomiclabs/hardhat-etherscan": "^3.1.0",
+    "@nomiclabs/hardhat-waffle": "^2.0.3",
+    "@typechain/ethers-v5": "^10.1.0",
+    "@typechain/hardhat": "^6.1.2",
+    "@types/chai": "^4.2.0",
+    "@types/mocha": "^9.1.0",
+    "@types/node": ">=12.0.0",
+    "chai": "^4.2.0",
+    "ethers": "^5.4.7",
+    "hardhat": "^2.12.4",
+    "hardhat-gas-reporter": "^1.0.8",
+    "solidity-coverage": "^0.8.0",
+    "ts-node": ">=8.0.0",
+    "typechain": "^8.1.0",
+    "typescript": ">=4.5.0"
+  },
+  "dependencies": {
+    "@openzeppelin/contracts": "^4.8.0",
+    "dotenv": "^16.0.3"
+  },
+  "scripts": {
+    "slither": "slither . --solc-remaps '@openzeppelin=node_modules/@openzeppelin @chainlink=node_modules/@chainlink' --exclude naming-convention,external-function,low-level-calls",
+    "toolbox": "docker run -it --rm -v $PWD:/src trailofbits/eth-security-toolbox",
+    "myth": "docker run -it --rm -v $PWD:/src mythril/myth",
+    "test": "hardhat test",
+    "echidna": "hardhat compile && echidna-test . --test-mode assertion --contract FarmTest   --config echidna.config.yml",
+    "test:staging": "hardhat test --network goerli",
+    "lint": "solhint 'contracts/_.sol'",
+    "lint:fix": "solhint 'contracts/**/_.sol' --fix",
+    "format": "prettier --write .",
+    "coverage": "hardhat coverage",
+    "build": "hardhat compile",
+    "deploy": "hardhat deploy",
+    "deploy:staging": "hardhat deploy --network goerli"
+  }
+}

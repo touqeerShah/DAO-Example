@@ -10,11 +10,13 @@ const deployGovernorContract: DeployFunction = async function (hre: HardhatRunti
     let { deployer, } = await getNamedAccounts();
     let timelock = await get("TimeLock");
     let token = await get("GovernanceToken");
+    log("timelock === ", timelock.address)
+    log("token === ", token.address)
 
     log("Deploying Goveror  Contract .... ")
     const GovernorContract = await deploy("GovernorContract", {
         from: deployer,
-        args: [token, timelock, QUORUM_PERCENTAGE, VOTING_PERIOD, VOTING_DELAY, ADDRESS_ZERO],
+        args: [token.address, timelock.address, QUORUM_PERCENTAGE, VOTING_PERIOD, VOTING_DELAY],
         log: true,
         // we need to wait if on a live network so we can verify properly
         waitConfirmations: networkConfig[network.name].blockConfirmations || 1,

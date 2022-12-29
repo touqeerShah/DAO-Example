@@ -5,11 +5,10 @@ import { networkConfig, developmentChains, QUORUM_PERCENTAGE, VOTING_DELAY, VOTI
 import { ethers } from "hardhat"
 
 const deploySetupGovernorContract: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
-    let { network, deployments, getNamedAccounts } = hre
-    let { deploy, log, get } = deployments
+    let { deployments, getNamedAccounts } = hre
+    let { log } = deployments
     let { deployer } = await getNamedAccounts();
     let timelock = await ethers.getContract("TimeLock", deployer);
-    let token = await ethers.getContract("GovernanceToken", deployer);
     let goveror = await ethers.getContract("GovernorContract", deployer);
 
     log("Set-Up Goveror  Contract .... ")

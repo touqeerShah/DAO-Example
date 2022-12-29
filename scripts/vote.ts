@@ -1,18 +1,31 @@
-import { ethers } from "hardhat";
+import { ethers, network } from "hardhat";
+import { moveBlock } from "../utils/move-block"
+import * as fs from "fs";
 
+import { proposalsFile, VOTING_PERIOD, developmentChains } from "../helper-hardhat-config"
 async function main() {
-  const currentTimestampInSeconds = Math.round(Date.now() / 1000);
-  const ONE_YEAR_IN_SECS = 365 * 24 * 60 * 60;
-  const unlockTime = currentTimestampInSeconds + ONE_YEAR_IN_SECS;
+  let proposals = JSON.parse(fs.readFileSync(proposalsFile, "utf8"))
+  let proposalId = proposals[network.config.chainId!].at(-1)
+  console.log("proposalId", proposalId);
 
-  const lockedAmount = ethers.utils.parseEther("1");
+  // 0 = Against, 1 = For, 2 = Abstain for this example
+  let voteWay = 1;
+  let reason = "I was good change";
+  await vote(proposalId, voteWay, reason)
 
-  const Lock = await ethers.getContractFactory("Lock");
-  const lock = await Lock.deploy(unlockTime, { value: lockedAmount });
 
-  await lock.deployed();
-
-  console.log(`Lock with 1 ETH and unlock timestamp ${unlockTime} deployed to ${lock.address}`);
+}
+async function vote(proposalId: string, voteWay: number, reason: string) {
+  console.log("Voting...")
+  const governor = await ethers.getContract("GovernorContract");
+  const voteTx = await governor.castVoteWithReason(proposalId, voteWay, reason)
+  const voteTxReceipt = await voteTx.wait(1)
+  console.log(voteTxReceipt.events[0].args.reason)
+  const proposalState = await governor.state(proposalId)
+  console.log(`Current Proposal State: ${proposalState}`)
+  if (developmentChains.includes(network.name)) {
+    await moveBlock(VOTING_PERIOD + 1)
+  }
 }
 
 // We recommend this pattern to be able to use async/await everywhere

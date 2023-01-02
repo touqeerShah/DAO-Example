@@ -9,7 +9,7 @@ const deployGovernorContract: DeployFunction = async function (hre: HardhatRunti
     let { deploy, log, get } = deployments
     let { deployer, } = await getNamedAccounts();
     let timelock = await get("TimeLock");
-    let token = await get("GovernanceToken");
+    let token = await get("GovernanceNFT");
     log("timelock === ", timelock.address)
     log("token === ", token.address)
 

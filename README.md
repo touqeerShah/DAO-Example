@@ -1,15 +1,10 @@
 # DAO-Example
 
-In this repo we try to execute example of ERC 1155 stand NFT creation, which allow us to create multiple NFT in single place which are easy to manage.
+It is simple example for DOA 
 
 ### Usercase
 
-We use simple application in which we create crops some of them are common or some of them are unique.
-
-- First we Mint NFT at crops contract.
-- Then we move those crop for sale to the Farm contract on which other user can buy those NFT.
-- we have our own DAI ERC20 token which we issue to the user so they can put there money on stack and get some point which are used to buy NFT's.
-- It simple case of like game where you have some component which game offer based on point user own, once you put user coin on stack based on you time how long you put you money on stack Farm contract award you some Point which you can claim by buy NFT's from farm.
+This is simple example of Governance based on both ERO20 and ERC721 you can used any of them and used this simple example
 
 - [Hardhat Upgrades](#hardhat-upgrades)
 - [Getting Started](#getting-started)
@@ -48,58 +43,51 @@ We use simple application in which we create crops some of them are common or so
 ## Quickstart
 
 ```
-git clone https://github.com/touqeerShah/NFT-ERC-1155.git
-cd NFT-ERC-1155
+git clone https://github.com/touqeerShah/DAO-EXAMPLE.git
+cd DAO-EXAMPLE
 yarn
 ```
 
 # Usage
 
-Deploy:
-
+Start Node:
 ```
-yarn run deploy
-```
-
-## Testing
-
-```
-yarn run test
+hh node
 ```
 
-### Test Coverage
+Open new terminal Deploy and run following command:
+`following command will run the script which is used to create proposal for value change`
 
 ```
-yarn run coverage
-```
-
-### Fuzz Testing
-
-- Run eth-security-toolbox with docker
+hh run scripts/prpose.ts --network localhost
 
 ```
-docker run -it --rm  -v $PWD:/code/  trailofbits/eth-security-toolbox
-```
 
-- Once Toolbox is running then
-
-```
-yarn run echidna
-```
+It time to vote:
+`following command will submit vote accrpt the proposal`
 
 ```
-Output:
-echidna-test . --test-mode assertion --contract FarmTest   --config echidna.config.yml
-Analyzing contract: /code/contracts/test/FarmeTest.sol:FarmTest
-crops():  passed! 🎉
-farm():  passed! 🎉
-claimNFTs(uint256[],uint256[]):  passed! 🎉
-addNFTs(uint256[],uint256[],uint256[]):  passed! 🎉
-stakeTokens(uint256):  passed! 🎉
-unstakeTokens():  passed! 🎉
-token():  passed! 🎉
-AssertionFailed(..):  passed! 🎉
+hh run scripts/vote.ts --network localhost
+
 ```
+
+Once vote is executed it is time to put propoal in Queue:
+`following command will submit Queue to wait to process time will finished `
+
+```
+hh run scripts/queue.ts --network localhost
+
+```
+
+
+Once propoal in Queue:
+`following command  will impletment the changes and call the function to updated the values`
+
+```
+hh run scripts/queue.ts --network localhost
+
+```
+
 
 # Deployment to a testnet or mainnet
 

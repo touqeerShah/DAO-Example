@@ -2,14 +2,26 @@
 pragma solidity ^0.8.9;
 
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Votes.sol";
+import "@openzeppelin/contracts/utils/Counters.sol";
+import "./FigurePrintOracle.sol";
+import "./../interfaces/IUserIdentityNFT.sol";
+import "./../libraries/helper.sol";
 
-contract UserIdentityNFT is ERC721Votes {
-    uint256 public tokenCount;
-    error GovernanceNFT__TransferNoAllowed(uint256 tokenId, address from);
+contract UserIdentityNFT is ERC721, ERC721Votes, IUserIdentityNFT {
+    using Counters for Counters.Counter;
+    Counters.Counter private idCount;
+    FigurePrintOracle private figureprintOracle;
 
-    constructor() ERC721("GovernanceToken", "GT") EIP712("GovernanceToken", "GT") {
-        tokenCount = 1;
-        _mint(msg.sender, tokenCount);
+    constructor(
+        address payable _figureprintOracle,
+        string memory name,
+        string memory symbol,
+        string memory signingDomain,
+        string memory signatureVersion
+    ) ERC721(name, symbol) EIP712(signingDomain, signatureVersion) {
+        figureprintOracle = FigurePrintOracle(_figureprintOracle);
+        idCount.increment();
+        _mint(msg.sender, idCount.current());
     }
 
     // The functions below are overrides required by Solidity.
@@ -19,28 +31,76 @@ contract UserIdentityNFT is ERC721Votes {
         address to,
         uint256 firstTokenId,
         uint256 batchSize
-    ) internal override(ERC721Votes) {
+    ) internal override(ERC721, ERC721Votes) {
         super._afterTokenTransfer(from, to, firstTokenId, batchSize);
     }
 
-    function verifyIdentity(string memory id, bytes32 fingerPrint) public {
+    function verifyFingerPrint(string memory userId, bytes memory fingerPrint) public {
+        if (balanceOf(msg.sender) > 0) {
+            revert GovernanceNFT__UserIdAlreadyIssued(userId, msg.sender);
+        }
+        figureprintOracle.verifyFingerPrint(msg.sender, userId, fingerPrint);
+        //check user balance if it is one not allow to verify new ID
         // first we call here connect with oricel contract to send request for vaification of the data
     }
 
     /**
      * First we request to Oracles to verfiy our Identity with Id Number and finger print hash
      */
-    function _mint(address to, uint256 tokenId) internal override(ERC721) {
+    function _mint(address /*to*/, uint256 tokenId) internal override(ERC721) {
         // super._mint(to, tokenId);
         // get user id and get which token id assign to that user and what is the status of signature
+        VerifcaitonRecord memory userRecord = figureprintOracle.getUserRecord(msg.sender);
+        idCount.increment();
+        tokenId = idCount.current();
+        if (userRecord.status == VerficationStatus.DEAFULT) {
+            revert GovernanceNFT__FirstVerifyIdenetity();
+        } else if (userRecord.status == VerficationStatus.VERIFIED) {
+            super._mint(msg.sender, tokenId);
+            emit IdVerifedAndIssued("", address(0));
+        } else if (userRecord.status == VerficationStatus.PENDING) {
+            revert GovernanceNFT__VerficationStillPending();
+        } else if (userRecord.status == VerficationStatus.PENDING) {
+            revert GovernanceNFT__VerficationStillRejected();
+        }
     }
 
-    function _safeMint(address to, uint256 tokenId) internal virtual override {
+    function _safeMint(address /*to*/, uint256 tokenId) internal virtual override {
         // super._safeMint(to, tokenId, "");
+        VerifcaitonRecord memory userRecord = figureprintOracle.getUserRecord(msg.sender);
+        idCount.increment();
+        tokenId = idCount.current();
+        if (userRecord.status == VerficationStatus.DEAFULT) {
+            revert GovernanceNFT__FirstVerifyIdenetity();
+        } else if (userRecord.status == VerficationStatus.VERIFIED) {
+            super._mint(msg.sender, tokenId);
+            emit IdVerifedAndIssued("", address(0));
+        } else if (userRecord.status == VerficationStatus.PENDING) {
+            revert GovernanceNFT__VerficationStillPending();
+        } else if (userRecord.status == VerficationStatus.PENDING) {
+            revert GovernanceNFT__VerficationStillRejected();
+        }
     }
 
-    function _safeMint(address to, uint256 tokenId, bytes memory data) internal virtual override {
+    function _safeMint(
+        address /*to*/,
+        uint256 tokenId,
+        bytes memory /* data*/
+    ) internal virtual override {
         // super._safeMint(to, tokenId, "");
+        VerifcaitonRecord memory userRecord = figureprintOracle.getUserRecord(msg.sender);
+        idCount.increment();
+        tokenId = idCount.current();
+        if (userRecord.status == VerficationStatus.DEAFULT) {
+            revert GovernanceNFT__FirstVerifyIdenetity();
+        } else if (userRecord.status == VerficationStatus.VERIFIED) {
+            super._mint(msg.sender, tokenId);
+            emit IdVerifedAndIssued("", address(0));
+        } else if (userRecord.status == VerficationStatus.PENDING) {
+            revert GovernanceNFT__VerficationStillPending();
+        } else if (userRecord.status == VerficationStatus.PENDING) {
+            revert GovernanceNFT__VerficationStillRejected();
+        }
     }
 
     function transferFrom(
@@ -84,6 +144,11 @@ contract UserIdentityNFT is ERC721Votes {
     }
 
     function _burn(uint256 tokenId) internal override(ERC721) {
+        // burnUserRecord call but first check the user is owner of the NFT
         super._burn(tokenId);
+    }
+
+    function getIdCount() public view returns (uint256) {
+        return idCount.current();
     }
 }

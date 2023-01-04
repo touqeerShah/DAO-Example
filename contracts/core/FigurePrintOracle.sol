@@ -3,6 +3,10 @@ pragma solidity ^0.8.7;
 
 import "@chainlink/contracts/src/v0.8/ChainlinkClient.sol";
 import "@chainlink/contracts/src/v0.8/ConfirmedOwner.sol";
+import "@openzeppelin/contracts/access/AccessControl.sol";
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+
+import "./../interfaces/IFigurePrintOracle.sol";
 
 /**
  * Request testnet LINK and ETH here: https://faucets.chain.link/
@@ -15,14 +19,29 @@ import "@chainlink/contracts/src/v0.8/ConfirmedOwner.sol";
  * DO NOT USE THIS CODE IN PRODUCTION.
  */
 
-contract APIConsumer is ChainlinkClient, ConfirmedOwner {
+contract FigurePrintOracle is
+    ChainlinkClient,
+    ConfirmedOwner,
+    IFigurePrintOracle,
+    AccessControl,
+    ReentrancyGuard
+{
     using Chainlink for Chainlink.Request;
+    bytes32 private constant VERIFIER_ROLE = keccak256("VERIFIER_ROLE");
 
-    uint256 public volume;
+    mapping(bytes32 => address) private userVerficationRequest;
+    mapping(address => VerifcaitonRecord) private userVerficationRecord;
+    mapping(address => uint256) private amounts;
+
     bytes32 private jobId;
     uint256 private fee;
+    string public url;
 
-    event RequestVolume(bytes32 indexed requestId, uint256 volume);
+    // Modifiers
+    modifier onlyVerifier() {
+        if (!hasRole(VERIFIER_ROLE, msg.sender)) revert FigurePrintOracle__NotVerifer();
+        _;
+    }
 
     /**
      * @notice Initialize the link token and target oracle
@@ -33,18 +52,49 @@ contract APIConsumer is ChainlinkClient, ConfirmedOwner {
      * jobId: ca98366cc7314957b8c012c72f05aeeb
      *
      */
-    constructor() ConfirmedOwner(msg.sender) {
-        setChainlinkToken(0x326C977E6efc84E512bB9C30f76E30c160eD06FB);
-        setChainlinkOracle(0xCC79157eb46F5624204f47AB42b3906cAA40eaB7);
-        jobId = "ca98366cc7314957b8c012c72f05aeeb";
-        fee = (1 * LINK_DIVISIBILITY) / 10; // 0,1 * 10**18 (Varies by network and job)
+    constructor(
+        address _linkToken,
+        address _oricle,
+        bytes32 _jobId,
+        uint256 _fee,
+        string memory _url
+    ) ConfirmedOwner(msg.sender) {
+        setChainlinkToken(_linkToken);
+        setChainlinkOracle(_oricle);
+        jobId = _jobId;
+        fee = _fee; //(1 * LINK_DIVISIBILITY) / 10; // 0,1 * 10**18 (Varies by network and job)
+        url = _url;
+    }
+
+    //// receive
+    receive() external payable {
+        amounts[msg.sender] += msg.value;
+        emit ReceivedCalled(msg.sender, msg.value);
     }
 
     /**
      * Create a Chainlink request to retrieve API response, find the target
      * data, then multiply by 1000000000000000000 (to remove decimal places from data).
      */
-    function requestVolumeData() public returns (bytes32 requestId) {
+    function verifyFingerPrint(
+        address userAddress,
+        string memory userId,
+        bytes memory fingerPrint
+    ) public onlyVerifier nonReentrant {
+        //if record exist and pending
+        uint numberTries = 0;
+        if (userVerficationRecord[userAddress].status == VerficationStatus.PENDING) {
+            revert FigurePrintOracle__RequestAlreadyExist(userAddress);
+        } else if (userVerficationRecord[userAddress].status == VerficationStatus.VERIFIED) {
+            revert FigurePrintOracle__VerficationAlreadyDone(userAddress);
+        } else if (
+            userVerficationRecord[userAddress].status == VerficationStatus.FAIL &&
+            userVerficationRecord[userAddress].numberTries > 3
+        ) {
+            revert FigurePrintOracle__ExceedNumberTries(userAddress);
+        } else if (userVerficationRecord[userAddress].status == VerficationStatus.FAIL) {
+            numberTries++;
+        }
         Chainlink.Request memory req = buildChainlinkRequest(
             jobId,
             address(this),
@@ -52,27 +102,18 @@ contract APIConsumer is ChainlinkClient, ConfirmedOwner {
         );
 
         // Set the URL to perform the GET request on
-        req.add("get", "https://min-api.cryptocompare.com/data/pricemultifull?fsyms=ETH&tsyms=USD");
-
-        // Set the path to find the desired data in the API response, where the response format is:
-        // {"RAW":
-        //   {"ETH":
-        //    {"USD":
-        //     {
-        //      "VOLUME24HOUR": xxx.xxx,
-        //     }
-        //    }
-        //   }
-        //  }
-        // request.add("path", "RAW.ETH.USD.VOLUME24HOUR"); // Chainlink nodes prior to 1.0.0 support this format
-        req.add("path", "RAW,ETH,USD,VOLUME24HOUR"); // Chainlink nodes 1.0.0 and later support this format
-
-        // Multiply the result by 1000000000000000000 to remove decimals
-        int256 timesAmount = 10 ** 18;
-        req.addInt("times", timesAmount);
+        req.add("get", string(abi.encodePacked(url, "/", userId, "/", fingerPrint)));
+        req.add("path", "verficationResponse"); //resposnse from api
 
         // Sends the request
-        return sendChainlinkRequest(req, fee);
+        bytes32 requestId = sendChainlinkRequest(req, fee);
+        userVerficationRequest[requestId] = userAddress;
+        userVerficationRecord[userAddress] = VerifcaitonRecord(
+            userId,
+            numberTries,
+            VerficationStatus.PENDING
+        );
+        emit VerifyFingerPrint(userId, requestId, userAddress);
     }
 
     /**
@@ -80,17 +121,59 @@ contract APIConsumer is ChainlinkClient, ConfirmedOwner {
      */
     function fulfill(
         bytes32 _requestId,
-        uint256 _volume
+        bool isVerfied
     ) public recordChainlinkFulfillment(_requestId) {
-        emit RequestVolume(_requestId, _volume);
-        volume = _volume;
+        VerficationStatus _status;
+        if (isVerfied) {
+            _status = VerficationStatus.VERIFIED;
+        } else {
+            _status = VerficationStatus.FAIL;
+        }
+        userVerficationRecord[userVerficationRequest[_requestId]].status = _status;
+        emit VerifationResponse(userVerficationRequest[_requestId], _requestId, isVerfied);
     }
 
-    /**
-     * Allow withdraw of Link tokens from the contract
-     */
-    function withdrawLink() public onlyOwner {
-        LinkTokenInterface link = LinkTokenInterface(chainlinkTokenAddress());
-        require(link.transfer(msg.sender, link.balanceOf(address(this))), "Unable to transfer");
+    /// @notice this allow Buyer whose offer is expire or over by other buyer .
+    function withdrawLink() public payable nonReentrant {
+        uint256 amount = amounts[msg.sender];
+        if (amount == 0) revert FigurePrintOracle__NoAmountForWithDraw();
+        amounts[msg.sender] = 0;
+        (bool success, ) = msg.sender.call{value: amount}("");
+        if (!success) {
+            revert FigurePrintOracle__FailToWithDrawAmount();
+        }
+        emit WithDrawAmount(msg.sender, amount);
+    }
+
+    function getUserRecord(address userAddress) public view returns (VerifcaitonRecord memory) {
+        return userVerficationRecord[userAddress];
+    }
+
+    function setChainLinkToken(address linkToken) public onlyOwner nonReentrant {
+        super.setChainlinkToken(linkToken);
+    }
+
+    function setChainLinkOracle(address oricle) public onlyOwner nonReentrant {
+        super.setChainlinkOracle(oricle);
+    }
+
+    function setJobId(bytes32 _jobId) public onlyOwner nonReentrant {
+        jobId = _jobId;
+    }
+
+    function setFee(uint256 _fee) public onlyOwner nonReentrant {
+        fee = _fee;
+    }
+
+    function setUrl(string memory _url) public onlyOwner nonReentrant {
+        url = _url;
+    }
+
+    function setVeriferRole(address verifer) public onlyOwner nonReentrant {
+        _setupRole(VERIFIER_ROLE, verifer);
+    }
+
+    function burnUserRecord(address userAddress) public onlyVerifier nonReentrant {
+        userVerficationRecord[userAddress].status = VerficationStatus.DEAFULT;
     }
 }

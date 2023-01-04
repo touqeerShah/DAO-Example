@@ -31,7 +31,8 @@
   "dependencies": {
     "@chainlink/contracts": "^0.5.1",
     "@openzeppelin/contracts": "^4.8.0",
-    "dotenv": "^16.0.3"
+    "dotenv": "^16.0.3",
+    "hardhat-deploy": "^0.11.22"
   },
   "scripts": {
     "slither": "slither . --solc-remaps '@openzeppelin=node_modules/@openzeppelin @chainlink=node_modules/@chainlink' --exclude naming-convention,external-function,low-level-calls",

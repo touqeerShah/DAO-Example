@@ -9,7 +9,8 @@ interface IFigurePrintOracle {
     event VerifationResponse(
         address indexed userAddress,
         bytes32 indexed requestId,
-        bool isVerfied
+        string indexed uri,
+        string isVerfied
     );
     event ReceivedCalled(address indexed buyer, uint256 indexed amount);
     event FallbackCalled(address indexed buyer, uint256 indexed amount);
@@ -40,8 +41,6 @@ interface IFigurePrintOracle {
     function setJobId(bytes32 _jobId) external;
 
     function setFee(uint256 _fee) external;
-
-    function setUrl(string memory _url) external;
 
     function setVeriferRole(address verifer) external;
 

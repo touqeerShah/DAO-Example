@@ -7,6 +7,7 @@ import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
 import "./../interfaces/IFigurePrintOracle.sol";
+import "./OrcaleUrlProvider.sol";
 
 /**
  * Request testnet LINK and ETH here: https://faucets.chain.link/
@@ -30,12 +31,14 @@ contract FigurePrintOracle is
     bytes32 private constant VERIFIER_ROLE = keccak256("VERIFIER_ROLE");
 
     mapping(bytes32 => address) private userVerficationRequest;
+    mapping(uint => string) private apis;
+
     mapping(address => VerifcaitonRecord) private userVerficationRecord;
     mapping(address => uint256) private amounts;
-
+    OrcaleUrlProvider orcaleUrlProvider;
     bytes32 private jobId;
     uint256 private fee;
-    string public url;
+    string public baseUrl;
 
     // Modifiers
     modifier onlyVerifier() {
@@ -57,13 +60,16 @@ contract FigurePrintOracle is
         address _oricle,
         bytes32 _jobId,
         uint256 _fee,
-        string memory _url
+        address _orcaleUrlProvider
     ) ConfirmedOwner(msg.sender) {
         setChainlinkToken(_linkToken);
         setChainlinkOracle(_oricle);
         jobId = _jobId;
         fee = _fee; //(1 * LINK_DIVISIBILITY) / 10; // 0,1 * 10**18 (Varies by network and job)
-        url = _url;
+        orcaleUrlProvider = OrcaleUrlProvider(_orcaleUrlProvider);
+
+        apis[0] = "getAddress";
+        apis[1] = "getVerfity";
     }
 
     //// receive
@@ -98,39 +104,54 @@ contract FigurePrintOracle is
         Chainlink.Request memory req = buildChainlinkRequest(
             jobId,
             address(this),
-            this.fulfill.selector
+            this.fulfillMultipleParameters.selector
         );
 
         // Set the URL to perform the GET request on
-        req.add("get", string(abi.encodePacked(url, "/", userId, "/", fingerPrint)));
+        baseUrl = orcaleUrlProvider.getURL();
+        req.add(
+            "get",
+            string(
+                abi.encodePacked(baseUrl, apis[1], "?userId=", userId, "&fingerPrint=", fingerPrint)
+            )
+        );
         req.add("path", "verficationResponse"); //resposnse from api
-
-        // Sends the request
+        req.add("get", string(abi.encodePacked(baseUrl, apis[0], "?address=", userAddress)));
+        req.add("path", "uri");
+        // // Sends the request
         bytes32 requestId = sendChainlinkRequest(req, fee);
         userVerficationRequest[requestId] = userAddress;
         userVerficationRecord[userAddress] = VerifcaitonRecord(
             userId,
             numberTries,
+            "",
             VerficationStatus.PENDING
         );
         emit VerifyFingerPrint(userId, requestId, userAddress);
     }
 
     /**
-     * Receive the response in the form of uint256
+     * @notice Fulfillment function for multiple parameters in a single request
+     * @dev This is called by the oracle. recordChainlinkFulfillment must be used.
      */
-    function fulfill(
+    function fulfillMultipleParameters(
         bytes32 _requestId,
-        bool isVerfied
-    ) public recordChainlinkFulfillment(_requestId) {
+        string memory isVerfied,
+        string memory uri
+    )
+        public
+        // string memory uri
+        recordChainlinkFulfillment(_requestId)
+    {
         VerficationStatus _status;
-        if (isVerfied) {
+        if (keccak256(bytes(isVerfied)) == keccak256(bytes("true"))) {
             _status = VerficationStatus.VERIFIED;
         } else {
             _status = VerficationStatus.FAIL;
         }
         userVerficationRecord[userVerficationRequest[_requestId]].status = _status;
-        emit VerifationResponse(userVerficationRequest[_requestId], _requestId, isVerfied);
+        userVerficationRecord[userVerficationRequest[_requestId]].uri = uri;
+        emit VerifationResponse(userVerficationRequest[_requestId], _requestId, uri, isVerfied);
     }
 
     /// @notice this allow Buyer whose offer is expire or over by other buyer .
@@ -149,6 +170,10 @@ contract FigurePrintOracle is
         return userVerficationRecord[userAddress];
     }
 
+    function getBaseURI() public view returns (string memory) {
+        return baseUrl;
+    }
+
     function setChainLinkToken(address linkToken) public onlyOwner nonReentrant {
         super.setChainlinkToken(linkToken);
     }
@@ -163,10 +188,6 @@ contract FigurePrintOracle is
 
     function setFee(uint256 _fee) public onlyOwner nonReentrant {
         fee = _fee;
-    }
-
-    function setUrl(string memory _url) public onlyOwner nonReentrant {
-        url = _url;
     }
 
     function setVeriferRole(address verifer) public onlyOwner nonReentrant {

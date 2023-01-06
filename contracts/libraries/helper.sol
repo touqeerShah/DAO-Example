@@ -4,6 +4,7 @@ pragma solidity ^0.8.17;
 struct VerifcaitonRecord {
     string userId;
     uint numberTries; //no more the 3 request if case of Rejection
+    string uri;
     VerficationStatus status; //
 }
 

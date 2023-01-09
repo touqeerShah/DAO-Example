@@ -7,9 +7,9 @@ import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
-import "./../interfaces/IDocumentVoting.sol";
+import "./../interfaces/IDocumentSignature.sol";
 
-contract DocumentVoting is Ownable, IDocumentVoting, EIP712, ERC721URIStorage {
+contract DocumentSignature is Ownable, IDocumentSignature, EIP712, ERC721URIStorage {
     using Counters for Counters.Counter;
     Counters.Counter private idCount;
     mapping(uint256 => DocumentDetials) documentDetials;
@@ -19,7 +19,7 @@ contract DocumentVoting is Ownable, IDocumentVoting, EIP712, ERC721URIStorage {
 
     modifier onlyDocumentOwner(address owner) {
         if (owner != msg.sender) {
-            revert DocumentVoting__OnlyOwnerCanCall();
+            revert DocumentSignature__OnlyOwnerCanCall();
         }
         _;
     }
@@ -43,10 +43,10 @@ contract DocumentVoting is Ownable, IDocumentVoting, EIP712, ERC721URIStorage {
         uint256[] memory partiesTokenId
     ) public {
         if (ERC721(userIdentityNFT).balanceOf(msg.sender) == 1) {
-            revert DocumentVoting__CreatorIdentityNotExit(msg.sender);
+            revert DocumentSignature__CreatorIdentityNotExit(msg.sender);
         }
         if (signatureEndingingPeriod == signatureStartingPeriod) {
-            revert DocumentVoting__StartingAndEndingValuesNotSome(
+            revert DocumentSignature__StartingAndEndingValuesNotSome(
                 signatureEndingingPeriod,
                 signatureStartingPeriod
             );
@@ -96,7 +96,7 @@ contract DocumentVoting is Ownable, IDocumentVoting, EIP712, ERC721URIStorage {
                 signer !=
                 ERC721(userIdentityNFT).ownerOf(documentDetials[documentId].parties[i].tokenId)
             ) {
-                revert DocumentVoting__InValidSignature(
+                revert DocumentSignature__InValidSignature(
                     documentDetials[documentId].parties[i].tokenId
                 );
             }
@@ -136,7 +136,7 @@ contract DocumentVoting is Ownable, IDocumentVoting, EIP712, ERC721URIStorage {
             }
         }
         if (!isNotExist) {
-            revert DocumentVoting__UserNotExist();
+            revert DocumentSignature__UserNotExist();
         }
         return SignatureStatus.Deafult;
     }

@@ -3,7 +3,7 @@
 pragma solidity ^0.8.17;
 import "@openzeppelin/contracts/utils/Timers.sol";
 
-interface IDocumentVoting {
+interface IDocumentSignature {
     //struct
     struct DocumentDetials {
         address creator;
@@ -46,11 +46,11 @@ interface IDocumentVoting {
     event DocumentProcess(uint256 indexed documentId, bool indexed isValidation);
 
     // Error
-    error DocumentVoting__CreatorIdentityNotExit(address creator);
-    error DocumentVoting__StartingAndEndingValuesNotSome(uint64 start, uint64 end);
-    error DocumentVoting__InValidSignature(uint256 tokeId);
-    error DocumentVoting__OnlyOwnerCanCall();
-    error DocumentVoting__UserNotExist();
+    error DocumentSignature__CreatorIdentityNotExit(address creator);
+    error DocumentSignature__StartingAndEndingValuesNotSome(uint64 start, uint64 end);
+    error DocumentSignature__InValidSignature(uint256 tokeId);
+    error DocumentSignature__OnlyOwnerCanCall();
+    error DocumentSignature__UserNotExist();
 
     function createDocument(
         bytes memory name,

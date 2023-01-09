@@ -115,9 +115,9 @@ contract FigurePrintOracle is
                 abi.encodePacked(baseUrl, apis[1], "?userId=", userId, "&fingerPrint=", fingerPrint)
             )
         );
-        req.add("path", "verficationResponse"); //resposnse from api
+        req.add("path1", "verficationResponse"); //resposnse from api
         req.add("get", string(abi.encodePacked(baseUrl, apis[0], "?address=", userAddress)));
-        req.add("path", "uri");
+        req.add("path2", "uri");
         // // Sends the request
         bytes32 requestId = sendChainlinkRequest(req, fee);
         userVerficationRequest[requestId] = userAddress;

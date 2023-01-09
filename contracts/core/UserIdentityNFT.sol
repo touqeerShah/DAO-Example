@@ -22,8 +22,8 @@ contract UserIdentityNFT is ERC721URIStorage, ERC721Votes, IUserIdentityNFT {
         string memory signatureVersion
     ) ERC721(name, symbol) EIP712(signingDomain, signatureVersion) {
         figureprintOracle = FigurePrintOracle(_figureprintOracle);
-        idCount.increment();
-        _mint(msg.sender, idCount.current());
+        // idCount.increment();
+        // _mint(msg.sender, idCount.current());
     }
 
     // The functions below are overrides required by Solidity.

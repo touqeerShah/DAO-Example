@@ -16,6 +16,9 @@ contract GovernorContract is
     GovernorVotesQuorumFraction,
     GovernorTimelockControl
 {
+    bytes32 public constant CAST_VOTE =
+        keccak256("CasteVote(uint256 proposalId,uint8 support,string reason)");
+
     constructor(
         IVotes _token,
         TimelockController _timelock,
@@ -34,21 +37,11 @@ contract GovernorContract is
         GovernorTimelockControl(_timelock)
     {}
 
-    function votingDelay()
-        public
-        view
-        override(IGovernor, GovernorSettings)
-        returns (uint256)
-    {
+    function votingDelay() public view override(IGovernor, GovernorSettings) returns (uint256) {
         return super.votingDelay();
     }
 
-    function votingPeriod()
-        public
-        view
-        override(IGovernor, GovernorSettings)
-        returns (uint256)
-    {
+    function votingPeriod() public view override(IGovernor, GovernorSettings) returns (uint256) {
         return super.votingPeriod();
     }
 
@@ -56,12 +49,7 @@ contract GovernorContract is
 
     function quorum(
         uint256 blockNumber
-    )
-        public
-        view
-        override(IGovernor, GovernorVotesQuorumFraction)
-        returns (uint256)
-    {
+    ) public view override(IGovernor, GovernorVotesQuorumFraction) returns (uint256) {
         return super.quorum(blockNumber);
     }
 
@@ -74,12 +62,7 @@ contract GovernorContract is
 
     function state(
         uint256 proposalId
-    )
-        public
-        view
-        override(Governor, GovernorTimelockControl)
-        returns (ProposalState)
-    {
+    ) public view override(Governor, GovernorTimelockControl) returns (ProposalState) {
         return super.state(proposalId);
     }
 
@@ -138,5 +121,34 @@ contract GovernorContract is
         bytes4 interfaceId
     ) public view override(Governor, GovernorTimelockControl) returns (bool) {
         return super.supportsInterface(interfaceId);
+    }
+
+    function _hash(
+        uint256 proposalId,
+        uint8 support,
+        string memory reason
+    ) internal view returns (bytes32) {
+        return _hashTypedDataV4(keccak256(abi.encode(CAST_VOTE, proposalId, support, reason)));
+    }
+
+    function getSignature(string memory proposalId) public {
+        // first we call here connect with oricel contract to send request and signature based on proposal
+        // and map to request id and proposalId so cast vote in future
+    }
+
+    /**
+     * @dev See {IGovernor-castVoteBySig}.
+     */
+    function castVoteBySig(
+        //requestId this ID will be ID of Oracles response
+        uint256 proposalId,
+        uint8 support,
+        string memory reason,
+        bytes memory signature
+    ) public virtual returns (uint256) {
+        // here we get signature response but oracle from off-chain
+        bytes32 digest = _hash(proposalId, support, reason);
+        address voter = ECDSA.recover(digest, signature);
+        return super._castVote(proposalId, voter, support, "");
     }
 }

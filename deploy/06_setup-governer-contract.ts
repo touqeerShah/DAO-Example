@@ -1,9 +1,9 @@
 import { HardhatRuntimeEnvironment } from "hardhat/types"
 import { DeployFunction } from "hardhat-deploy/types"
-import verify from "../helper-functions"
 import { contractAddressFile, ADDRESS_ZERO } from "../helper-hardhat-config"
 import { ethers } from "hardhat"
 import * as fs from "fs";
+import { getTimeLock, getGovernorContract } from "../instructions"
 
 const deploySetupGovernorContract: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     let { deployments, getNamedAccounts } = hre
@@ -11,8 +11,8 @@ const deploySetupGovernorContract: DeployFunction = async function (hre: Hardhat
     let { deployer } = await getNamedAccounts();
     let contractAddress = JSON.parse(fs.readFileSync(contractAddressFile, "utf8"))
 
-    let timelock = await ethers.getContractAt("TimeLock", contractAddress["TimeLock"]);
-    let goveror = await ethers.getContractAt("GovernorContract", contractAddress["GovernorContract"]);
+    let timelock = await getTimeLock()
+    let goveror = await getGovernorContract()
 
     log("Set-Up Goveror  Contract .... ")
     const proposerRole = await timelock.PROPOSER_ROLE()

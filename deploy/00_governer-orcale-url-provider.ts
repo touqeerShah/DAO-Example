@@ -1,9 +1,10 @@
 import { HardhatRuntimeEnvironment } from "hardhat/types"
 import { DeployFunction } from "hardhat-deploy/types"
-import verify from "../helper-functions"
-import { networkConfig, developmentChains } from "../helper-hardhat-config"
+import verify from "../instructions/verify-code"
+import { networkConfig, developmentChains, contractAddressFile } from "../helper-hardhat-config"
 import { ethers } from "hardhat"
 import { ORCALE_URL_PROVIDER } from "./../helper-hardhat-config"
+import { storeProposalId } from "./../utils/storeContractAddress"
 
 const deployOrcaleUrlProvider: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     let { network, deployments, getNamedAccounts } = hre
@@ -24,6 +25,8 @@ const deployOrcaleUrlProvider: DeployFunction = async function (hre: HardhatRunt
             },
         },
     })
+    await storeProposalId(orcaleUrlProvider.address, "OrcaleUrlProvider", contractAddressFile)
+
     log(`OrcaleUrlProvider at ${orcaleUrlProvider.address}`)
     if (!developmentChains.includes(network.name) && process.env.ETHERSCAN_API_KEY) {
         await verify(orcaleUrlProvider.address, [])

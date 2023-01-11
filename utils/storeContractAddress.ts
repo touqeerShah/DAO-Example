@@ -14,7 +14,6 @@ export function storeProposalId(address: string, contractName: string, filePath:
         contractAddress = {};
         contractAddress[contractName] = {};
     }
-    console.log("contractAddress", contractAddress);
 
     contractAddress[contractName] = address.toString();
     fs.writeFileSync(filePath, JSON.stringify(contractAddress), "utf8");

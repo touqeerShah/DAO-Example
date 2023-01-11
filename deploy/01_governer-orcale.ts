@@ -1,9 +1,10 @@
 import { HardhatRuntimeEnvironment } from "hardhat/types"
 import { DeployFunction, DeployResult } from "hardhat-deploy/types"
 import { getStringToBytes } from "../utils/convert"
-import verify from "../helper-functions"
-import { networkConfig, developmentChains, JOB_ID } from "../helper-hardhat-config"
+import verify from "../instructions/verify-code"
+import { networkConfig, developmentChains, JOB_ID, contractAddressFile } from "../helper-hardhat-config"
 import { ethers } from "hardhat"
+import { storeProposalId } from "./../utils/storeContractAddress"
 
 const deployFigurePrintOracle: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     let { network, deployments, getNamedAccounts } = hre
@@ -55,6 +56,8 @@ const deployFigurePrintOracle: DeployFunction = async function (hre: HardhatRunt
         // we need to wait if on a live network so we can verify properly
         waitConfirmations: networkConfig[network.name].blockConfirmations || 1,
     })
+    await storeProposalId(figurePrintOracle.address, "FigurePrintOracle", contractAddressFile)
+
     log(`figurePrintOracle at ${figurePrintOracle.address}`)
     if (!developmentChains.includes(network.name) && process.env.ETHERSCAN_API_KEY) {
         await verify(figurePrintOracle.address, [])

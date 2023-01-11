@@ -1,6 +1,6 @@
 import { HardhatRuntimeEnvironment } from "hardhat/types"
 import { DeployFunction } from "hardhat-deploy/types"
-import verify from "../helper-functions"
+import verify from "../instructions/verify-code"
 import { networkConfig, developmentChains, contractAddressFile, QUORUM_PERCENTAGE, VOTING_DELAY, VOTING_PERIOD, ADDRESS_ZERO } from "../helper-hardhat-config"
 
 import { storeProposalId } from "./../utils/storeContractAddress"

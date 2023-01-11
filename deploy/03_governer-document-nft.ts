@@ -1,8 +1,9 @@
 import { HardhatRuntimeEnvironment } from "hardhat/types"
 import { DeployFunction } from "hardhat-deploy/types"
-import verify from "../helper-functions"
-import { networkConfig, developmentChains, DS_SIGNING_DOMAIN_NAME, DS_SIGNING_DOMAIN_VERSION, DS_NFT_NAME, DS_NFT_SYMBOL } from "../helper-hardhat-config"
+import verify from "../instructions/verify-code"
+import { networkConfig, developmentChains, DS_SIGNING_DOMAIN_NAME, contractAddressFile, DS_SIGNING_DOMAIN_VERSION, DS_NFT_NAME, DS_NFT_SYMBOL } from "../helper-hardhat-config"
 import { ethers } from "hardhat"
+import { storeProposalId } from "./../utils/storeContractAddress"
 
 const deployDocumentSignature: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     let { network, deployments, getNamedAccounts } = hre
@@ -19,6 +20,8 @@ const deployDocumentSignature: DeployFunction = async function (hre: HardhatRunt
         // we need to wait if on a live network so we can verify properly
         waitConfirmations: networkConfig[network.name].blockConfirmations || 1,
     })
+    await storeProposalId(DocumentSignature.address, "DocumentSignature", contractAddressFile)
+
     log(`DocumentSignature at ${DocumentSignature.address}`)
     if (!developmentChains.includes(network.name) && process.env.ETHERSCAN_API_KEY) {
         await verify(DocumentSignature.address, [])

@@ -1,9 +1,9 @@
 import { VoidSigner } from "@ethersproject/abstract-signer";
 import { BigNumber, Signer } from "ethers";
-import { DocumentVoting } from "../typechain-types";
+import { DocumentSignature } from "../typechain-types";
 
 export async function castVote(
-  ptCollection: DocumentVoting,
+  ptCollection: DocumentSignature,
   signer: Signer,
   tokenId: BigNumber,
   uri: string,

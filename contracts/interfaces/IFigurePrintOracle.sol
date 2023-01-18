@@ -1,15 +1,14 @@
 // SPDX-License-Identifier: MIT
 
 pragma solidity ^0.8.17;
-import "./../libraries/helper.sol";
+import "./../libraries/OracleHelper.sol";
 
 interface IFigurePrintOracle {
     //Events
-    event VerifyFingerPrint(string indexed userId, bytes32 requestId, address userAddress);
+    event VerifyFingerPrint(bytes indexed userId, bytes32 requestId, address userAddress);
     event VerifationResponse(
         address indexed userAddress,
         bytes32 indexed requestId,
-        string indexed uri,
         string isVerfied
     );
     event ReceivedCalled(address indexed buyer, uint256 indexed amount);
@@ -26,7 +25,7 @@ interface IFigurePrintOracle {
 
     function verifyFingerPrint(
         address userAddress,
-        string memory userId,
+        bytes memory userId,
         bytes memory fingerPrint
     ) external;
 
@@ -45,4 +44,6 @@ interface IFigurePrintOracle {
     function setVeriferRole(address verifer) external;
 
     function burnUserRecord(address userAddress) external;
+
+    function updateBaseURI() external;
 }

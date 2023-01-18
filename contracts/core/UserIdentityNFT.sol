@@ -7,12 +7,15 @@ import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
 import "./FigurePrintOracle.sol";
 import "./../interfaces/IUserIdentityNFT.sol";
-import "./../libraries/helper.sol";
+import "./../libraries/OracleHelper.sol";
+import "./../libraries/UserIdentityNFT.sol";
 
 contract UserIdentityNFT is ERC721URIStorage, ERC721Votes, IUserIdentityNFT {
     using Counters for Counters.Counter;
     Counters.Counter private idCount;
     FigurePrintOracle private figureprintOracle;
+    bytes32 public constant CLAME_USERID_VOUCHER =
+        keccak256("createUserId(string uri,bytes userId,bytes fingerPrint)");
 
     constructor(
         address payable _figureprintOracle,
@@ -37,7 +40,7 @@ contract UserIdentityNFT is ERC721URIStorage, ERC721Votes, IUserIdentityNFT {
         super._afterTokenTransfer(from, to, firstTokenId, batchSize);
     }
 
-    function verifyFingerPrint(string memory userId, bytes memory fingerPrint) public {
+    function verifyFingerPrint(bytes memory userId, bytes memory fingerPrint) public {
         if (balanceOf(msg.sender) > 0) {
             revert GovernanceNFT__UserIdAlreadyIssued(userId, msg.sender);
         }
@@ -48,7 +51,7 @@ contract UserIdentityNFT is ERC721URIStorage, ERC721Votes, IUserIdentityNFT {
 
     /// @notice Redeems an NFTVoucher for an actual NFT, creating it in the process.
 
-    function redeem() external {
+    function redeem(UserIdVoucher calldata voucher) external {
         // super._mint(to, tokenId);
         // get user id and get which token id assign to that user and what is the status of signature
         VerifcaitonRecord memory userRecord = figureprintOracle.getUserRecord(msg.sender);
@@ -57,8 +60,12 @@ contract UserIdentityNFT is ERC721URIStorage, ERC721Votes, IUserIdentityNFT {
         if (userRecord.status == VerficationStatus.DEAFULT) {
             revert GovernanceNFT__FirstVerifyIdenetity();
         } else if (userRecord.status == VerficationStatus.VERIFIED) {
+            address signer = verifySignature(voucher);
+            if (signer != msg.sender) {
+                revert GovernanceNFT__NotValidUserToRedeem();
+            }
             super._mint(msg.sender, tokenId);
-            super._setTokenURI(tokenId, userRecord.uri);
+            super._setTokenURI(tokenId, voucher.uri);
             emit IdVerifedAndIssued(userRecord.userId, msg.sender);
         } else if (userRecord.status == VerficationStatus.PENDING) {
             revert GovernanceNFT__VerficationStillPending();
@@ -76,6 +83,28 @@ contract UserIdentityNFT is ERC721URIStorage, ERC721Votes, IUserIdentityNFT {
 
     function _safeMint(address to, uint256 tokenId) internal virtual override {
         revert GovernanceNFT__DirectMintNotAllow(tokenId, to);
+    }
+
+    function _hash(UserIdVoucher calldata voucher) internal view returns (bytes32) {
+        return
+            _hashTypedDataV4(
+                keccak256(
+                    abi.encode(
+                        CLAME_USERID_VOUCHER,
+                        voucher.uri,
+                        voucher.userId,
+                        voucher.fingerPrint
+                    )
+                )
+            );
+    }
+
+    /// @notice Verifies the signature for a given NFTVoucher, returning the address of the signer.
+    /// @dev Will revert if the signature is invalid. Does not verify that the signer is authorized to mint NFTs.
+    /// @param voucher An NFTVoucher describing an unminted NFT.
+    function verifySignature(UserIdVoucher calldata voucher) public view returns (address) {
+        bytes32 digest = _hash(voucher);
+        return ECDSA.recover(digest, voucher.signature);
     }
 
     function _safeMint(

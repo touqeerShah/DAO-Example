@@ -171,6 +171,11 @@ or, to fix:
 yarn lint:fix
 ```
 
+Contract Address Testnet
+```
+OrcaleUrlProvider : 0xb0e264DddD55Ec329977F846bEFbd028350c6641
+```
+
 # Thank you!
 
 [![Touqeer Medium](https://img.shields.io/badge/Medium-000000?style=for-the-badge&logo=medium&logoColor=white)](https://medium.com/@touqeershah32)

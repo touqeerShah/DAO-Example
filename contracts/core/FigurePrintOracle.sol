@@ -112,8 +112,7 @@ contract FigurePrintOracle is
         );
         // Set the URL to perform the GET request on
         baseUrl = orcaleUrlProvider.getURL();
-        // Set the URL to perform the GET request on
-        baseUrl = orcaleUrlProvider.getURL();
+
         req.add(
             "get",
             string(

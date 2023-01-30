@@ -24,6 +24,8 @@ const deployFigurePrintOracle: DeployFunction = async function (hre: HardhatRunt
             waitConfirmations: networkConfig[network.name].blockConfirmations || 1,
         })
         log("Deploying chain Token Contract .... ", chainToken.address)
+        await storeProposalId(chainToken.address, "LinkToken", contractAddressFile)
+
         networkConfig[network.name].linkToken = chainToken.address;
         orcale = await deploy("MockOracle", {
             from: deployer,
@@ -34,6 +36,8 @@ const deployFigurePrintOracle: DeployFunction = async function (hre: HardhatRunt
         })
         log("Deploying orcale Contract .... ", orcale.address)
         networkConfig[network.name].oricle = orcale.address;
+        await storeProposalId(orcale.address, "MockOracle", contractAddressFile)
+
 
     }
 

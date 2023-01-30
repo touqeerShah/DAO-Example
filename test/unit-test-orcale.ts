@@ -1,30 +1,46 @@
 import { assert, expect } from "chai";
 import { BigNumber, Signer } from "ethers";
 import { ethers } from "hardhat";
-import { IAccessControl__factory, IERC165__factory, IERC721__factory, DocumentSignature } from "../typechain-types";
-import { getDocumentSignature, castVote, getInterfaceID } from "../instructions";
-import { CastVote } from "../utils/castvote"
-const PRINT_LOG = false;
+import { LinkToken, FigurePrintOracle } from "../typechain-types";
+import { getLinkToken, getFigurePrintOracle } from "../instructions"
 
-describe("PTCollection", async function () {
-  let admin: Signer, virtualMarket: Signer, userA: Signer, userB: Signer;
-  let ptCollection: DocumentSignature;
-  let voucher: CastVote;
 
-  const COLLECTION_SIGNING_DOMAIN = "PT-Voucher";
-  const COLLECTION_SIGNATURE_VERSION = "1";
-  const NFT_URI = "ipfs://QmQFcbsk1Vjt1n361MceM5iNeMTuFzuVUZ1hKFWD7ZCpuC";
-  const MIN_PRICE = ethers.utils.parseEther("10");
+describe("FigurePrintOracle", async function () {
+  let deployer: Signer;
+  let linkToken: LinkToken;
+  let figurePrintOracle: FigurePrintOracle;
+
 
   before(async () => {
+    [deployer] = await ethers.getSigners(); // could also do with getNamedAccounts
+    linkToken = await getLinkToken();
+    figurePrintOracle = await getFigurePrintOracle();
+    console.log("orcaleUrlProvider", linkToken.address)
 
   });
 
-  describe("PTCollection.redeem", async function () {
-    it("Unallowed user", async function () {
+  describe("figurePrint Oracle Test", async function () {
+    it("Check figurePrint Oracle Link Balance", async function () {
+      let balance = await linkToken.balanceOf(figurePrintOracle.address)
+      const ethValue = ethers.utils.formatEther(balance);
+
+      console.log("url => ", ethValue);
+      assert.equal(ethValue, "0.0")
 
     });
 
+    it("Fund figurePrint Oracle with Link", async function () {
+      let sendEther: BigNumber = ethers.utils.parseEther("1")
+
+      let tx = await linkToken.transfer(figurePrintOracle.address, sendEther)
+      var txReceipt = await tx.wait(1) // waits 1 block
+
+      let balance = await linkToken.balanceOf(figurePrintOracle.address)
+      const ethValue = ethers.utils.formatEther(balance);
+      console.log("url => ", ethValue);
+      assert.equal(ethValue, "1.0")
+
+    });
   });
 
 });

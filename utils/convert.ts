@@ -7,3 +7,5 @@ export function getStringToBytes(stringData: string) {
     console.log("bytesData ", bytesData)
     return bytesData;
 }
+
+

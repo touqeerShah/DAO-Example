@@ -25,13 +25,13 @@ interface IFigurePrintOracle {
 
     function verifyFingerPrint(
         address userAddress,
-        bytes memory userId,
-        bytes memory fingerPrint
+        bytes calldata userId,
+        bytes calldata fingerPrint
     ) external;
 
     function withdrawLink() external payable;
 
-    function getUserRecord(address userAddress) external returns (VerifcaitonRecord memory);
+    function getUserRecord(address userAddress) external returns (VerifcaitonRecord calldata);
 
     function setChainLinkToken(address linkToken) external;
 
@@ -44,6 +44,4 @@ interface IFigurePrintOracle {
     function setVeriferRole(address verifer) external;
 
     function burnUserRecord(address userAddress) external;
-
-    function updateBaseURI() external;
 }

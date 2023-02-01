@@ -1,16 +1,18 @@
 import "@typechain/hardhat"
-import "@nomiclabs/hardhat-waffle"
+// import "@nomiclabs/hardhat-waffle"
 import "@nomiclabs/hardhat-etherscan"
 import "@nomiclabs/hardhat-ethers"
+import "@nomicfoundation/hardhat-chai-matchers";
 import "hardhat-gas-reporter"
 import "dotenv/config"
 import "solidity-coverage"
 import "hardhat-deploy"
 import { HardhatUserConfig } from "hardhat/config"
-
+import { chainIds } from "./config/constants";
+import { NetworkUserConfig } from "hardhat/types";
 var {
   PROVIDER_REN_URL,
-
+  INFURA_API_KEY,
   ETHERSCANAPIKEY,
   USER2_PRIVATE_KEY,
   COINMARKETCAP_API_KEY,
@@ -28,11 +30,7 @@ const config: HardhatUserConfig = {
       chainId: 31337,
       allowUnlimitedContractSize: true
     },
-    goerli: {
-      url: PROVIDER_REN_URL,
-      accounts: [PRIVATE_KEY],
-      chainId: 5,
-    },
+    goerli: getChainConfig("goerli"),
   },
   solidity: {
     compilers: [
@@ -68,12 +66,35 @@ const config: HardhatUserConfig = {
     deployer: {
       default: 0,
       1: 0,
+    }, deployer2: {
+      default: 1,
+      2: 1,
     },
   },
   mocha: {
-    timeout: 200000, // 200 seconds max for running tests
+    timeout: 400000, // 200 seconds max for running tests
   },
 }
 
 
 export default config;
+function getChainConfig(network: keyof typeof chainIds): NetworkUserConfig {
+  let accounts: string[] = [];
+  for (let i = 0; i < 10; i++) {
+    const privateKey: string | undefined = process.env["PRIVATE_KEY_" + i.toString()];
+    if (privateKey) {
+      accounts.push(privateKey);
+    }
+  }
+  const url: string = "https://" + network + ".infura.io/v3/" + INFURA_API_KEY;
+  console.log("url", url);
+  // https://goerli.infura.io/v3/eb19eeafefff4d9eb07ed30adcad89a1
+
+  return {
+    accounts,
+    chainId: chainIds[network],
+    url,
+    gas: 10000000,
+    blockGasLimit: 100000000,
+  };
+}

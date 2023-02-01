@@ -5,12 +5,15 @@ import verify from "../instructions/verify-code"
 import { networkConfig, developmentChains, JOB_ID, contractAddressFile } from "../helper-hardhat-config"
 import { ethers } from "hardhat"
 import { storeProposalId } from "./../utils/storeContractAddress"
+import { getOrcaleUrlProvider } from "../instructions"
 
 const deployFigurePrintOracle: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     let { network, deployments, getNamedAccounts } = hre
     let { deploy, log } = deployments
     let { deployer } = await getNamedAccounts();
-    let orcaleUrlProvider = await ethers.getContractAt("OrcaleUrlProvider", deployer);
+    let orcaleUrlProvider = await getOrcaleUrlProvider();
+    console.log("orcaleUrlProvider.address", orcaleUrlProvider.address);
+
     let chainToken: DeployResult;
     let orcale: DeployResult;
     if (network.name != "goerli") {

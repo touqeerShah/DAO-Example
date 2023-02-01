@@ -54,7 +54,7 @@ contract FigurePrintOracle is
      * Oracle: 0xCC79157eb46F5624204f47AB42b3906cAA40eaB7 (Chainlink DevRel)
      * jobId: 0x3764383061363338366566353433613361626235323831376636373037653362
      *   _Fee 100000000000000000
-     * _oP 0xb0e264DddD55Ec329977F846bEFbd028350c6641
+     * _oP 0x04B0601D72dAEEA5D88D5d3B3495854FEe6cCf36
      *
      *
      *
@@ -73,7 +73,7 @@ contract FigurePrintOracle is
         orcaleUrlProvider = OrcaleUrlProvider(_orcaleUrlProvider);
 
         apis[0] = "getUri";
-        apis[1] = "getAddress";
+        apis[1] = "getVerfity";
     }
 
     //// receive
@@ -88,9 +88,9 @@ contract FigurePrintOracle is
      */
     function verifyFingerPrint(
         address userAddress,
-        bytes memory userId,
-        bytes memory fingerPrint
-    ) public onlyVerifier nonReentrant {
+        bytes calldata userId,
+        bytes calldata fingerPrint
+    ) public nonReentrant {
         //if record exist and pending
         uint numberTries = 0;
         if (userVerficationRecord[userAddress].status == VerficationStatus.PENDING) {
@@ -103,7 +103,7 @@ contract FigurePrintOracle is
         ) {
             revert FigurePrintOracle__ExceedNumberTries(userAddress);
         } else if (userVerficationRecord[userAddress].status == VerficationStatus.FAIL) {
-            numberTries++;
+            numberTries = userVerficationRecord[userAddress].numberTries++;
         }
         Chainlink.Request memory req = buildChainlinkRequest(
             jobId,
@@ -121,7 +121,7 @@ contract FigurePrintOracle is
         );
         req.add("path", "verficationResponse"); //resposnse from api
 
-        // // Sends the request
+        // // // Sends the request
         bytes32 requestId = sendChainlinkRequest(req, fee);
         userVerficationRequest[requestId] = userAddress;
         userVerficationRecord[userAddress] = VerifcaitonRecord(
@@ -175,7 +175,18 @@ contract FigurePrintOracle is
     }
 
     function getBaseURI() public view returns (string memory) {
-        return baseUrl;
+        return
+            string(
+                abi.encodePacked(
+                    orcaleUrlProvider.getURL(),
+                    apis[1],
+                    "?userId=",
+                    "test",
+                    "&fingerPrint=",
+                    "fingerPrint"
+                )
+            );
+        // return orcaleUrlProvider.getURL();
     }
 
     function setChainLinkToken(address linkToken) public onlyOwner nonReentrant {

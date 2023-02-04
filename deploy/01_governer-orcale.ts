@@ -45,7 +45,7 @@ const deployFigurePrintOracle: DeployFunction = async function (hre: HardhatRunt
     }
 
     log("Deploying Figure Print Oracle Contract .... ")
-
+    log("networkConfig[network.name]", networkConfig[network.name])
     let args: any[] = [
         networkConfig[network.name].linkToken,
         networkConfig[network.name].oricle,
@@ -67,7 +67,11 @@ const deployFigurePrintOracle: DeployFunction = async function (hre: HardhatRunt
 
     log(`figurePrintOracle at ${figurePrintOracle.address}`)
     if (!developmentChains.includes(network.name) && process.env.ETHERSCAN_API_KEY) {
-        await verify(figurePrintOracle.address, [])
+        await verify(figurePrintOracle.address, [networkConfig[network.name].linkToken,
+        networkConfig[network.name].oricle,
+        getStringToBytes(JOB_ID),
+        ethers.utils.parseEther("1"),
+        orcaleUrlProvider.address])
     }
 
 }

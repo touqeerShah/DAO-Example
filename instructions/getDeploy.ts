@@ -2,8 +2,13 @@ import { BigNumber } from "ethers";
 import { artifacts, ethers } from "hardhat";
 import { contractAddressFile } from "../helper-hardhat-config"
 import * as fs from "fs";
-import { OrcaleUrlProvider, GovernorContract, FigurePrintOracle, UserIdentityNFT, LinkToken, DocumentSignature, TimeLock } from "../typechain-types"
+import { OrcaleUrlProvider, GovernorContract, FigurePrintOracle, UserIdentityNFT, LinkToken, DocumentSignature, TimeLock, PTNFT } from "../typechain-types"
 
+export async function getPTNFT(): Promise<PTNFT> {
+  let contractAddress = JSON.parse(fs.readFileSync(contractAddressFile, "utf8"))
+  let ptnft = await ethers.getContractAt("PTNFT", contractAddress["PTNFT"]);
+  return ptnft;
+}
 export async function getOrcaleUrlProvider(): Promise<OrcaleUrlProvider> {
   let contractAddress = JSON.parse(fs.readFileSync(contractAddressFile, "utf8"))
   let orcaleUrlProvider = await ethers.getContractAt("OrcaleUrlProvider", contractAddress["OrcaleUrlProvider"]);

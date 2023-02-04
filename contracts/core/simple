@@ -58,7 +58,11 @@ contract UserIdentityNFT is ERC721URIStorage, ERC721Votes, IUserIdentityNFT {
         // get user id and get which token id assign to that user and what is the status of signature
         VerifcaitonRecord memory userRecord = figureprintOracle.getUserRecord(msg.sender);
         if (userRecord.status == VerficationStatus.DEAFULT) {
-            revert UserIdentityNFT__FirstVerifyIdenetity();
+            // revert UserIdentityNFT__FirstVerifyIdenetity();
+            require(
+                !(userRecord.status == VerficationStatus.DEAFULT),
+                "UserIdentityNFT__FirstVerifyIdenetity"
+            );
         } else if (userRecord.status == VerficationStatus.VERIFIED) {
             address signer = verifySignature(voucher);
             if (signer != msg.sender) {

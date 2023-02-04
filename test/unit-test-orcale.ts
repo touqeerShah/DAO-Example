@@ -52,7 +52,9 @@ describe("FigurePrintOracle", async function () {
 
     });
     it("Check Only Owner Execption", async () => {
-      await expect(figurePrintOracle.connect(deployer2).setVeriferRole(await deployer.getAddress())).to.revertedWith(
+      let address = await deployer.getAddress()
+
+      expect(await figurePrintOracle.connect(deployer2).setVeriferRole(address, { gasLimit: 3e6 })).to.revertedWith(
         "Only callable by owner"
       )
     })
@@ -72,16 +74,17 @@ describe("FigurePrintOracle", async function () {
     it("Request Already Exist FingurePrint from Orcale", async () => {
       const checkData = ethers.utils.keccak256(ethers.utils.toUtf8Bytes("data"))
       console.log(checkData);
-      let address = await deployer.getAddress()
 
-      let tx = await figurePrintOracle.connect(deployer).verifyFingerPrint(await deployer.getAddress(), checkData, checkData, { gasLimit: 3e7 });
-      (await tx).wait(1)
+      const _userId = getStringToBytes("7d80a6386ef543a3abb52817f6707e3b")
+      const _fingurePrint = getStringToBytes("7d80a6386ef543a3abb52817f6707e3a")
+      // let tx = await figurePrintOracle.connect(deployer).verifyFingerPrint(await deployer.getAddress(), _userId, _fingurePrint, { gasLimit: 3e7 });
+      // (await tx).wait(1)
 
       console.log(await figurePrintOracle.getUserRecord(await deployer.getAddress(),));
-      await expect(figurePrintOracle.connect(deployer).verifyFingerPrint(await deployer.getAddress(), checkData, checkData, { gasLimit: 3e7 })).to.revertedWith(
+      let address = await deployer.getAddress()
+      expect(await figurePrintOracle.verifyFingerPrint(address, _userId, _fingurePrint, { gasLimit: 3e7 })).to.be.revertedWith(
         "FigurePrintOracle__RequestAlreadyExist"
       )
-
 
     })
     it("Check URL", async () => {

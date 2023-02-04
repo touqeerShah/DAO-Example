@@ -26,6 +26,9 @@ This is simple example of Governance based on both ERO20 and ERC721 you can used
 
 # Getting Started
 
+## Deployed Contract Address
+FigurePrintOracle = 0x30dc3146E8D2b07D26f0B7681DB200cdfFA56D28
+
 ## Requirements
 
 - [Nodejs](https://nodejs.org/en/)

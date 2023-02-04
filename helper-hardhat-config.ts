@@ -14,7 +14,7 @@ export const networkConfig: networkConfigInfo = {
     localhost: {},
     hardhat: {},
     goerli: {
-        blockConfirmations: 6,
+        blockConfirmations: 2,
         linkToken: "0x326C977E6efc84E512bB9C30f76E30c160eD06FB",
         oricle: "0xCC79157eb46F5624204f47AB42b3906cAA40eaB7",
     },
@@ -47,3 +47,4 @@ export const DS_SIGNING_DOMAIN_NAME = "Doc-Sign"
 export const DS_SIGNING_DOMAIN_VERSION = "1"
 export const DS_NFT_NAME = "Doc-Sign"
 export const DS_NFT_SYMBOL = "DS_786"
+export const IPFS_SIMPLE = process.env.IPFS_SIMPLE || ""

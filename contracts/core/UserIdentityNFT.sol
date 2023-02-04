@@ -3,33 +3,36 @@ pragma solidity ^0.8.9;
 
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Votes.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
 import "@openzeppelin/contracts/utils/Counters.sol";
-import "./FigurePrintOracle.sol";
+import "./../interfaces/IFigurePrintOracle.sol";
 import "./../interfaces/IUserIdentityNFT.sol";
 import "./../libraries/OracleHelper.sol";
 import "./../libraries/UserIdentityNFT.sol";
 
-contract UserIdentityNFT is ERC721URIStorage, ERC721Votes, IUserIdentityNFT {
+contract UserIdentityNFT is
+    ERC721URIStorage,
+    Ownable,
+    ReentrancyGuard,
+    ERC721Votes,
+    IUserIdentityNFT
+{
     using Counters for Counters.Counter;
     Counters.Counter private idCount;
-    FigurePrintOracle private figureprintOracle;
+    address private figureprintOracle;
     bytes32 public constant CLAME_USERID_VOUCHER =
         keccak256("createUserId(string uri,bytes userId,bytes fingerPrint)");
 
     // "NFTVoucher(uint256 tokenId,string uri,address currency,uint256 minPrice,bool isFixedPrice)"
 
     constructor(
-        address payable _figureprintOracle,
         string memory name,
         string memory symbol,
         string memory signingDomain,
         string memory signatureVersion
-    ) ERC721(name, symbol) EIP712(signingDomain, signatureVersion) {
-        figureprintOracle = FigurePrintOracle(_figureprintOracle);
-        // idCount.increment();
-        // _mint(msg.sender, idCount.current());
-    }
+    ) ERC721(name, symbol) EIP712(signingDomain, signatureVersion) {}
 
     // The functions below are overrides required by Solidity.
 
@@ -46,7 +49,7 @@ contract UserIdentityNFT is ERC721URIStorage, ERC721Votes, IUserIdentityNFT {
         if (balanceOf(msg.sender) > 0) {
             revert UserIdentityNFT__UserIdAlreadyIssued(userId, msg.sender);
         }
-        figureprintOracle.verifyFingerPrint(msg.sender, userId, fingerPrint);
+        IFigurePrintOracle(figureprintOracle).verifyFingerPrint(msg.sender, userId, fingerPrint);
         //check user balance if it is one not allow to verify new ID
         // first we call here connect with oricel contract to send request for vaification of the data
     }
@@ -56,7 +59,9 @@ contract UserIdentityNFT is ERC721URIStorage, ERC721Votes, IUserIdentityNFT {
     function redeem(UserIdVoucher calldata voucher) public {
         // super._mint(to, tokenId);
         // get user id and get which token id assign to that user and what is the status of signature
-        VerifcaitonRecord memory userRecord = figureprintOracle.getUserRecord(msg.sender);
+        VerifcaitonRecord memory userRecord = IFigurePrintOracle(figureprintOracle).getUserRecord(
+            msg.sender
+        );
         if (userRecord.status == VerficationStatus.DEAFULT) {
             revert UserIdentityNFT__FirstVerifyIdenetity();
         } else if (userRecord.status == VerficationStatus.VERIFIED) {
@@ -86,25 +91,16 @@ contract UserIdentityNFT is ERC721URIStorage, ERC721Votes, IUserIdentityNFT {
         return true;
     }
 
-    function getfigureprintOracleResponse() public view returns (VerifcaitonRecord memory) {
-        VerifcaitonRecord memory userRecord = figureprintOracle.getUserRecord(msg.sender);
+    function getfigureprintOracleResponse() public returns (VerifcaitonRecord memory) {
+        VerifcaitonRecord memory userRecord = IFigurePrintOracle(figureprintOracle).getUserRecord(
+            msg.sender
+        );
         return userRecord;
     }
 
     function getfigureprintOracleAddress() public view returns (address) {
         return address(figureprintOracle);
     }
-
-    /**
-     * First we request to Oracles to verfiy our Identity with Id Number and finger print hash
-    //  */
-    // function _mint(address to, uint256 tokenId) internal pure override(ERC721) {
-    //     revert UserIdentityNFT__DirectMintNotAllow(tokenId, to);
-    // }
-
-    // function _safeMint(address to, uint256 tokenId) internal virtual override {
-    //     revert UserIdentityNFT__DirectMintNotAllow(tokenId, to);
-    // }
 
     function _hash(UserIdVoucher calldata voucher) internal view returns (bytes32) {
         return
@@ -128,14 +124,6 @@ contract UserIdentityNFT is ERC721URIStorage, ERC721Votes, IUserIdentityNFT {
         return ECDSA.recover(digest, voucher.signature);
     }
 
-    // function _safeMint(
-    //     address to,
-    //     uint256 tokenId,
-    //     bytes memory /* data*/
-    // ) internal virtual override {
-    //     revert UserIdentityNFT__DirectMintNotAllow(tokenId, to);
-    // }
-
     function transferFrom(
         address from,
         address /*to*/,
@@ -144,38 +132,6 @@ contract UserIdentityNFT is ERC721URIStorage, ERC721Votes, IUserIdentityNFT {
         // require(true, "Not Allow to Transfer Token");
         revert UserIdentityNFT__TransferNoAllowed(tokenId, from);
     }
-
-    // /**
-    //  * @dev See {IERC721-safeTransferFrom}.
-    //  */
-    // function safeTransferFrom(
-    //     address from,
-    //     address /*to*/,
-    //     uint256 tokenId
-    // ) public virtual override {
-    //     revert UserIdentityNFT__TransferNoAllowed(tokenId, from);
-    // }
-
-    // /**
-    //  * @dev See {IERC721-safeTransferFrom}.
-    //  */
-    // function safeTransferFrom(
-    //     address from,
-    //     address /*to*/,
-    //     uint256 tokenId,
-    //     bytes memory /*data*/
-    // ) public virtual override {
-    //     revert UserIdentityNFT__TransferNoAllowed(tokenId, from);
-    // }
-
-    // function _safeTransfer(
-    //     address from,
-    //     address /*to*/,
-    //     uint256 tokenId,
-    //     bytes memory /*data*/
-    // ) internal virtual override {
-    //     revert UserIdentityNFT__TransferNoAllowed(tokenId, from);
-    // }
 
     function _burn(uint256 tokenId) internal override(ERC721, ERC721URIStorage) {
         // burnUserRecord call but first check the user is owner of the NFT
@@ -187,6 +143,16 @@ contract UserIdentityNFT is ERC721URIStorage, ERC721Votes, IUserIdentityNFT {
         uint256 tokenId
     ) public view override(ERC721, ERC721URIStorage) returns (string memory) {
         return super.tokenURI(tokenId);
+    }
+
+    function setFingerPrintAddress(
+        address payable _figureprintOracle
+    ) public onlyOwner nonReentrant {
+        figureprintOracle = _figureprintOracle;
+    }
+
+    function getFingerPrintAddress() public view returns (address) {
+        return address(figureprintOracle);
     }
 
     function getIdCount() public view returns (uint256) {

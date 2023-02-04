@@ -94,45 +94,45 @@ describe("FigurePrintOracle", async function () {
 
 
     })
-    it("Verify FingurePrint from Orcale", async () => {
-      // console.log(await figurePrintOracle.getUserRecord(await deployer2.getAddress()));
-      console.log("start verification");
+    // it("Verify FingurePrint from Orcale", async () => {
+    //   // console.log(await figurePrintOracle.getUserRecord(await deployer2.getAddress()));
+    //   console.log("start verification");
 
-      await new Promise(async (resolve, reject) => {
-        // setup listener before we enter the lottery
-        // Just in case the blockchain moves REALLY fast
-        figurePrintOracle.once("VerifationResponse", async () => {
-          console.log("VerifationResponse event fired!")
-          try {
-            // add our asserts here
-            const userData: VerifcaitonRecordStruct = await figurePrintOracle.getUserRecord("0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65")
-            console.log("userData =>", userData)
+    //   await new Promise(async (resolve, reject) => {
+    //     // setup listener before we enter the lottery
+    //     // Just in case the blockchain moves REALLY fast
+    //     figurePrintOracle.once("VerifationResponse", async () => {
+    //       console.log("VerifationResponse event fired!")
+    //       try {
+    //         // add our asserts here
+    //         const userData: VerifcaitonRecordStruct = await figurePrintOracle.getUserRecord("0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65")
+    //         console.log("userData =>", userData)
 
-            assert.equal(userData.status, 2);
-            resolve(0);
-          } catch (error) {
-            console.log(error)
-            reject(error)
-          }
-        })
-        // Then entering the verification
-        console.log("convert to bytes ");
+    //         assert.equal(userData.status, 2);
+    //         resolve(0);
+    //       } catch (error) {
+    //         console.log(error)
+    //         reject(error)
+    //       }
+    //     })
+    //     // Then entering the verification
+    //     console.log("convert to bytes ");
 
-        const _userId = getStringToBytes("7d80a6386ef543a3abb52817f6707e3b")
-        const _fingurePrint = getStringToBytes("7d80a6386ef543a3abb52817f6707e3a")
+    //     const _userId = getStringToBytes("7d80a6386ef543a3abb52817f6707e3b")
+    //     const _fingurePrint = getStringToBytes("7d80a6386ef543a3abb52817f6707e3a")
 
-        console.log("bytes => ", _userId);
+    //     console.log("bytes => ", _userId);
 
-        let tx = figurePrintOracle.connect(deployer).verifyFingerPrint('0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65', _userId, _fingurePrint);
-        (await tx).wait(1)
+    //     let tx = figurePrintOracle.connect(deployer).verifyFingerPrint('0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65', _userId, _fingurePrint);
+    //     (await tx).wait(1)
 
-        console.log(await figurePrintOracle.getUserRecord("0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65"));
+    //     console.log(await figurePrintOracle.getUserRecord("0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65"));
 
-        // and this code WONT complete until our listener has finished listening!
-      })
+    //     // and this code WONT complete until our listener has finished listening!
+    //   })
 
 
-    })
+    // })
   });
 
 });

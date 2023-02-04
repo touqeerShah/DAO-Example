@@ -14,7 +14,7 @@ export const networkConfig: networkConfigInfo = {
     localhost: {},
     hardhat: {},
     goerli: {
-        blockConfirmations: 2,
+        blockConfirmations: 4,
         linkToken: "0x326C977E6efc84E512bB9C30f76E30c160eD06FB",
         oricle: "0xCC79157eb46F5624204f47AB42b3906cAA40eaB7",
     },

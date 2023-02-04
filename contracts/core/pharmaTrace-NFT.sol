@@ -10,13 +10,12 @@ import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import "@openzeppelin/contracts/utils/cryptography/draft-EIP712.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
-// import "@openzeppelin/contracts/security/Pausable.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
 
+import "./../interfaces/IFigurePrintOracle.sol";
 import "./../libraries/UserIdentityNFT.sol";
 import "./../libraries/OracleHelper.sol";
-
 import "./../interfaces/IUserIdentityNFT.sol";
 // 3. Interfaces, Libraries, Contracts
 error PTNFT__NotOwner();
@@ -36,6 +35,8 @@ contract PTNFT is
     IUserIdentityNFT
 {
     // State variables
+    address private figureprintOracle;
+
     bytes32 private constant MINTER_ROLE = keccak256("MINTER_ROLE");
     bytes32 public constant CLAME_USERID_VOUCHER =
         keccak256("createUserId(string uri,bytes userId,bytes fingerPrint)");
@@ -60,7 +61,7 @@ contract PTNFT is
         string memory signingDomain,
         string memory signatureVersion
     ) ERC721(name, symbol) EIP712(signingDomain, signatureVersion) {
-        _setupRole(MINTER_ROLE, marketPlace); // this for ristricty only audit contract will call this
+        figureprintOracle = marketPlace;
     }
 
     /// @notice Redeems an NFTVoucher for an actual NFT, creating it in the process.
@@ -70,6 +71,11 @@ contract PTNFT is
         address redeemer,
         UserIdVoucher calldata voucher /*onlyMarketPlace*/ /*returns (uint256)*/
     ) public {
+        // bool _isVerifed = IFigurePrintOracle(figureprintOracle).getUserVerification(msg.sender);
+        // require(_isVerifed, "FirstVerifyIdenetity");
+        // if (userRecord.status == VerficationStatus.DEAFULT) {
+        //     revert UserIdentityNFT__FirstVerifyIdenetity();
+        // }
         // make sure signature is valid and get the address of the signer
         address signer = _verify(voucher);
         idCount.increment();
@@ -156,6 +162,12 @@ contract PTNFT is
     ) public view virtual override(AccessControl, ERC721) returns (bool) {
         return
             ERC721.supportsInterface(interfaceId) || AccessControl.supportsInterface(interfaceId);
+    }
+
+    function setFingerPrintAddress(
+        address payable _figureprintOracle
+    ) public onlyOwner nonReentrant {
+        figureprintOracle = _figureprintOracle;
     }
 
     // function _beforeConsecutiveTokenTransfer(

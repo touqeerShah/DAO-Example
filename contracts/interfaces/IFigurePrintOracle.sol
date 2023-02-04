@@ -33,6 +33,8 @@ interface IFigurePrintOracle {
 
     function getUserRecord(address userAddress) external returns (VerifcaitonRecord calldata);
 
+    function getUserVerification(address userAddress) external returns (bool);
+
     function setChainLinkToken(address linkToken) external;
 
     function setChainLinkOracle(address oricle) external;

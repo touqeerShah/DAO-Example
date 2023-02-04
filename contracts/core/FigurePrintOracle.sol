@@ -55,9 +55,6 @@ contract FigurePrintOracle is
      * jobId: 0x3764383061363338366566353433613361626235323831376636373037653362
      *   _Fee 100000000000000000
      * _oP 0x04B0601D72dAEEA5D88D5d3B3495854FEe6cCf36
-     *
-     *
-     *
      */
     constructor(
         address _linkToken,
@@ -93,17 +90,16 @@ contract FigurePrintOracle is
     ) public nonReentrant {
         //if record exist and pending
         uint numberTries = 0;
-        if (userVerficationRecord[userAddress].status == VerficationStatus.PENDING) {
+        VerifcaitonRecord memory userRecord = userVerficationRecord[userAddress];
+
+        if (userRecord.status == VerficationStatus.PENDING) {
             revert FigurePrintOracle__RequestAlreadyExist(userAddress);
-        } else if (userVerficationRecord[userAddress].status == VerficationStatus.VERIFIED) {
+        } else if (userRecord.status == VerficationStatus.VERIFIED) {
             revert FigurePrintOracle__VerficationAlreadyDone(userAddress);
-        } else if (
-            userVerficationRecord[userAddress].status == VerficationStatus.FAIL &&
-            userVerficationRecord[userAddress].numberTries > 3
-        ) {
+        } else if (userRecord.status == VerficationStatus.FAIL && userRecord.numberTries > 3) {
             revert FigurePrintOracle__ExceedNumberTries(userAddress);
-        } else if (userVerficationRecord[userAddress].status == VerficationStatus.FAIL) {
-            numberTries = userVerficationRecord[userAddress].numberTries++;
+        } else if (userRecord.status == VerficationStatus.FAIL) {
+            numberTries++;
         }
         Chainlink.Request memory req = buildChainlinkRequest(
             jobId,
@@ -170,6 +166,20 @@ contract FigurePrintOracle is
         return userVerficationRecord[userAddress];
     }
 
+    function getUserVerification(address userAddress) public view returns (bool) {
+        VerifcaitonRecord memory userRecord = userVerficationRecord[userAddress];
+        if (
+            userRecord.status == VerficationStatus.DEAFULT ||
+            userRecord.status == VerficationStatus.PENDING ||
+            userRecord.status == VerficationStatus.FAIL
+        ) {
+            return false;
+        } else if (userRecord.status == VerficationStatus.VERIFIED) {
+            return true;
+        }
+        return false;
+    }
+
     function updateBaseURI() public {
         baseUrl = orcaleUrlProvider.getURL();
     }
@@ -186,7 +196,6 @@ contract FigurePrintOracle is
                     "fingerPrint"
                 )
             );
-        // return orcaleUrlProvider.getURL();
     }
 
     function setChainLinkToken(address linkToken) public onlyOwner nonReentrant {

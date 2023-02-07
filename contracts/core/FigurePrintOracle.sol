@@ -52,8 +52,9 @@ contract FigurePrintOracle is
      * Goerli Testnet details:
      * Link Token: 0x326C977E6efc84E512bB9C30f76E30c160eD06FB
      * Oracle: 0xCC79157eb46F5624204f47AB42b3906cAA40eaB7 (Chainlink DevRel)
-     * jobId: ca98366cc7314957b8c012c72f05aeeb
-     *
+     * jobId: 0x3764383061363338366566353433613361626235323831376636373037653362
+     *   _Fee 100000000000000000
+     * _oP 0x04B0601D72dAEEA5D88D5d3B3495854FEe6cCf36
      */
     constructor(
         address _linkToken,
@@ -68,7 +69,7 @@ contract FigurePrintOracle is
         fee = _fee; //(1 * LINK_DIVISIBILITY) / 10; // 0,1 * 10**18 (Varies by network and job)
         orcaleUrlProvider = OrcaleUrlProvider(_orcaleUrlProvider);
 
-        apis[0] = "getAddress";
+        apis[0] = "getUri";
         apis[1] = "getVerfity";
     }
 
@@ -84,21 +85,20 @@ contract FigurePrintOracle is
      */
     function verifyFingerPrint(
         address userAddress,
-        string memory userId,
-        bytes memory fingerPrint
-    ) public onlyVerifier nonReentrant {
+        bytes calldata userId,
+        bytes calldata fingerPrint
+    ) public nonReentrant {
         //if record exist and pending
         uint numberTries = 0;
-        if (userVerficationRecord[userAddress].status == VerficationStatus.PENDING) {
+        VerifcaitonRecord memory userRecord = userVerficationRecord[userAddress];
+
+        if (userRecord.status == VerficationStatus.PENDING) {
             revert FigurePrintOracle__RequestAlreadyExist(userAddress);
-        } else if (userVerficationRecord[userAddress].status == VerficationStatus.VERIFIED) {
+        } else if (userRecord.status == VerficationStatus.VERIFIED) {
             revert FigurePrintOracle__VerficationAlreadyDone(userAddress);
-        } else if (
-            userVerficationRecord[userAddress].status == VerficationStatus.FAIL &&
-            userVerficationRecord[userAddress].numberTries > 3
-        ) {
+        } else if (userRecord.status == VerficationStatus.FAIL && userRecord.numberTries > 3) {
             revert FigurePrintOracle__ExceedNumberTries(userAddress);
-        } else if (userVerficationRecord[userAddress].status == VerficationStatus.FAIL) {
+        } else if (userRecord.status == VerficationStatus.FAIL) {
             numberTries++;
         }
         Chainlink.Request memory req = buildChainlinkRequest(
@@ -106,25 +106,23 @@ contract FigurePrintOracle is
             address(this),
             this.fulfillMultipleParameters.selector
         );
-
         // Set the URL to perform the GET request on
         baseUrl = orcaleUrlProvider.getURL();
+
         req.add(
             "get",
             string(
                 abi.encodePacked(baseUrl, apis[1], "?userId=", userId, "&fingerPrint=", fingerPrint)
             )
         );
-        req.add("path1", "verficationResponse"); //resposnse from api
-        req.add("get", string(abi.encodePacked(baseUrl, apis[0], "?address=", userAddress)));
-        req.add("path2", "uri");
-        // // Sends the request
+        req.add("path", "verficationResponse"); //resposnse from api
+
+        // // // Sends the request
         bytes32 requestId = sendChainlinkRequest(req, fee);
         userVerficationRequest[requestId] = userAddress;
         userVerficationRecord[userAddress] = VerifcaitonRecord(
             userId,
             numberTries,
-            "",
             VerficationStatus.PENDING
         );
         emit VerifyFingerPrint(userId, requestId, userAddress);
@@ -136,8 +134,7 @@ contract FigurePrintOracle is
      */
     function fulfillMultipleParameters(
         bytes32 _requestId,
-        string memory isVerfied,
-        string memory uri
+        string memory isVerfied
     )
         public
         // string memory uri
@@ -150,8 +147,7 @@ contract FigurePrintOracle is
             _status = VerficationStatus.FAIL;
         }
         userVerficationRecord[userVerficationRequest[_requestId]].status = _status;
-        userVerficationRecord[userVerficationRequest[_requestId]].uri = uri;
-        emit VerifationResponse(userVerficationRequest[_requestId], _requestId, uri, isVerfied);
+        emit VerifationResponse(userVerficationRequest[_requestId], _requestId, isVerfied);
     }
 
     /// @notice this allow Buyer whose offer is expire or over by other buyer .
@@ -170,8 +166,36 @@ contract FigurePrintOracle is
         return userVerficationRecord[userAddress];
     }
 
+    function getUserVerification(address userAddress) public view returns (bool) {
+        VerifcaitonRecord memory userRecord = userVerficationRecord[userAddress];
+        if (
+            userRecord.status == VerficationStatus.DEAFULT ||
+            userRecord.status == VerficationStatus.PENDING ||
+            userRecord.status == VerficationStatus.FAIL
+        ) {
+            return false;
+        } else if (userRecord.status == VerficationStatus.VERIFIED) {
+            return true;
+        }
+        return false;
+    }
+
+    function updateBaseURI() public {
+        baseUrl = orcaleUrlProvider.getURL();
+    }
+
     function getBaseURI() public view returns (string memory) {
-        return baseUrl;
+        return
+            string(
+                abi.encodePacked(
+                    orcaleUrlProvider.getURL(),
+                    apis[1],
+                    "?userId=",
+                    "test",
+                    "&fingerPrint=",
+                    "fingerPrint"
+                )
+            );
     }
 
     function setChainLinkToken(address linkToken) public onlyOwner nonReentrant {

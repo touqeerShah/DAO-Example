@@ -26,6 +26,10 @@ This is simple example of Governance based on both ERO20 and ERC721 you can used
 
 # Getting Started
 
+## Deployed Contract Address
+FigurePrintOracle = 0x30dc3146E8D2b07D26f0B7681DB200cdfFA56D28
+OrcaleUrlProvider = 0xAb570B4B76f86b8678C33bCCc26f3cE6D51f3479
+
 ## Requirements
 
 - [Nodejs](https://nodejs.org/en/)
@@ -169,6 +173,11 @@ or, to fix:
 
 ```
 yarn lint:fix
+```
+
+Contract Address Testnet
+```
+OrcaleUrlProvider : 0xb0e264DddD55Ec329977F846bEFbd028350c6641
 ```
 
 # Thank you!

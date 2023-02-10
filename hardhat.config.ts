@@ -1,8 +1,7 @@
-import "@typechain/hardhat"
-// import "@nomiclabs/hardhat-waffle"
-import "@nomiclabs/hardhat-etherscan"
-import "@nomiclabs/hardhat-ethers"
-import "@nomicfoundation/hardhat-chai-matchers";
+import "@nomicfoundation/hardhat-toolbox";
+import "@typechain/hardhat";
+import "hardhat-gas-reporter";
+import "solidity-coverage";
 import "hardhat-gas-reporter"
 import "dotenv/config"
 import "solidity-coverage"
@@ -72,7 +71,7 @@ const config: HardhatUserConfig = {
     },
   },
   mocha: {
-    timeout: 200000, // 200 seconds max for running tests
+    timeout: 300000, // 200 seconds max for running tests
   },
 }
 

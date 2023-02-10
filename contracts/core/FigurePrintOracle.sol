@@ -35,7 +35,7 @@ contract FigurePrintOracle is
 
     mapping(address => VerifcaitonRecord) private userVerficationRecord;
     mapping(address => uint256) private amounts;
-    OrcaleUrlProvider orcaleUrlProvider;
+    OrcaleUrlProvider private orcaleUrlProvider;
     bytes32 private jobId;
     uint256 private fee;
     string public baseUrl;
@@ -55,6 +55,9 @@ contract FigurePrintOracle is
      * jobId: 0x3764383061363338366566353433613361626235323831376636373037653362
      *   _Fee 100000000000000000
      * _oP 0x04B0601D72dAEEA5D88D5d3B3495854FEe6cCf36
+     *
+     *
+     *
      */
     constructor(
         address _linkToken,
@@ -87,8 +90,9 @@ contract FigurePrintOracle is
         address userAddress,
         bytes calldata userId,
         bytes calldata fingerPrint
-    ) public nonReentrant {
+    ) public nonReentrant onlyVerifier {
         //if record exist and pending
+
         uint numberTries = 0;
         VerifcaitonRecord memory userRecord = userVerficationRecord[userAddress];
 
@@ -128,6 +132,8 @@ contract FigurePrintOracle is
         emit VerifyFingerPrint(userId, requestId, userAddress);
     }
 
+    //0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266
+    //0x04FE0F4C91F8e55c9E4BE7f4353C509DaD066CD5
     /**
      * @notice Fulfillment function for multiple parameters in a single request
      * @dev This is called by the oracle. recordChainlinkFulfillment must be used.
@@ -162,19 +168,19 @@ contract FigurePrintOracle is
         emit WithDrawAmount(msg.sender, amount);
     }
 
-    function getUserRecord(address userAddress) public view returns (VerifcaitonRecord memory) {
-        return userVerficationRecord[userAddress];
+    function getUserRecord(address userAddress) public view returns (VerficationStatus) {
+        return userVerficationRecord[userAddress].status;
     }
 
     function getUserVerification(address userAddress) public view returns (bool) {
-        VerifcaitonRecord memory userRecord = userVerficationRecord[userAddress];
+        // VerifcaitonRecord memory userRecord = userVerficationRecord[userAddress];
         if (
-            userRecord.status == VerficationStatus.DEAFULT ||
-            userRecord.status == VerficationStatus.PENDING ||
-            userRecord.status == VerficationStatus.FAIL
+            userVerficationRecord[userAddress].status == VerficationStatus.DEAFULT ||
+            userVerficationRecord[userAddress].status == VerficationStatus.PENDING ||
+            userVerficationRecord[userAddress].status == VerficationStatus.FAIL
         ) {
             return false;
-        } else if (userRecord.status == VerficationStatus.VERIFIED) {
+        } else if (userVerficationRecord[userAddress].status == VerficationStatus.VERIFIED) {
             return true;
         }
         return false;
@@ -196,26 +202,52 @@ contract FigurePrintOracle is
                     "fingerPrint"
                 )
             );
+        // return orcaleUrlProvider.getURL();
     }
 
     function setChainLinkToken(address linkToken) public onlyOwner nonReentrant {
         super.setChainlinkToken(linkToken);
+        emit SetChainLinkToken(linkToken);
     }
 
     function setChainLinkOracle(address oricle) public onlyOwner nonReentrant {
         super.setChainlinkOracle(oricle);
+        emit SetChainLinkOracle(oricle);
     }
 
     function setJobId(bytes32 _jobId) public onlyOwner nonReentrant {
         jobId = _jobId;
+        emit SetJobId(jobId);
     }
 
     function setFee(uint256 _fee) public onlyOwner nonReentrant {
         fee = _fee;
+        emit SetFee(fee);
     }
 
     function setVeriferRole(address verifer) public onlyOwner nonReentrant {
         _setupRole(VERIFIER_ROLE, verifer);
+        emit SetVeriferRole(verifer);
+    }
+
+    function getChainLinkToken() public view returns (address) {
+        return super.chainlinkTokenAddress();
+    }
+
+    function getChainLinkOracle() public view returns (address) {
+        return super.chainlinkOracleAddress();
+    }
+
+    function getJobId() public view returns (bytes32) {
+        return jobId;
+    }
+
+    function getFee() public view returns (uint256) {
+        return fee;
+    }
+
+    function getVerifier() public view returns (bool) {
+        return hasRole(VERIFIER_ROLE, msg.sender);
     }
 
     function burnUserRecord(address userAddress) public onlyVerifier nonReentrant {

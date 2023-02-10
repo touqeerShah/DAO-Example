@@ -51,6 +51,7 @@ interface IDocumentSignature {
     error DocumentSignature__InValidSignature(uint256 tokeId);
     error DocumentSignature__OnlyOwnerCanCall();
     error DocumentSignature__UserNotExist();
+    error DocumentSignature__NotProcessBecauseNotInQueue();
 
     function createDocument(
         bytes memory name,

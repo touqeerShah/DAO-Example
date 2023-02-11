@@ -53,7 +53,7 @@ const deployFigurePrintOracle: DeployFunction = async function (hre: HardhatRunt
         networkConfig[network.name].linkToken,
         networkConfig[network.name].oricle,
         getStringToBytes(JOB_ID),
-        ethers.utils.parseEther("1"),
+        ethers.utils.parseEther("0.1"),
         orcaleUrlProvider.address
     ]
 
@@ -67,8 +67,8 @@ const deployFigurePrintOracle: DeployFunction = async function (hre: HardhatRunt
         waitConfirmations: networkConfig[network.name].blockConfirmations || 1,
     })
     await storeProposalId(figurePrintOracle.address, "FigurePrintOracle", contractAddressFile)
-    // let tx = await userIdentityNFT.setFingerPrintAddress(figurePrintOracle.address)
-    // await tx.wait(1)
+    let tx = await userIdentityNFT.setFingerPrintAddress(figurePrintOracle.address)
+    await tx.wait(1)
     log(`figurePrintOracle at ${figurePrintOracle.address}`)
     if (!developmentChains.includes(network.name) && process.env.ETHERSCANAPIKEY) {
         await verify(figurePrintOracle.address, args)

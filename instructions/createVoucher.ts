@@ -1,9 +1,9 @@
 import { VoidSigner } from "@ethersproject/abstract-signer";
 import { BigNumber, Signer } from "ethers";
-import { DocumentSignature, UserIdentityNFT, PTNFT } from "../typechain-types";
+import { DocumentSignature, UserIdentityNFT } from "../typechain-types";
 
 export async function castVote(
-  ptCollection: DocumentSignature,
+  documentSignature: DocumentSignature,
   signer: Signer,
   tokenId: BigNumber,
   uri: string,
@@ -11,19 +11,18 @@ export async function castVote(
   signingDomain: string,
   signatureVersion: string,
 ) {
-  const voucher = { tokenId, documentId, uri };
-  const chainId = (await ptCollection.provider.getNetwork()).chainId;
+  const voucher = { tokenId, documentId };
+  const chainId = (await documentSignature.provider.getNetwork()).chainId;
   const domain = {
     name: signingDomain,
     version: signatureVersion,
-    verifyingContract: ptCollection.address,
+    verifyingContract: documentSignature.address,
     chainId,
   };
   const types = {
     createDocument: [
       { name: "tokenId", type: "uint256" },
       { name: "documentId", type: "uint256" },
-      { name: "uri", type: "string" },
     ],
   };
   const signature = await (signer as VoidSigner)._signTypedData(domain, types, voucher);
@@ -31,7 +30,7 @@ export async function castVote(
     ...voucher,
     signature,
   };
-  return _voucher;
+  return signature;
 }
 
 export async function createUserId(
@@ -69,36 +68,3 @@ export async function createUserId(
 }
 
 
-export async function createPTNFT(
-  userIdentityNFT: PTNFT,
-  signer: Signer,
-  userId: string,
-  uri: string,
-  fingerPrint: string,
-  signingDomain: string,
-  signatureVersion: string,
-) {
-  const voucher = { uri, userId, fingerPrint };
-  const chainId = (await userIdentityNFT.provider.getNetwork()).chainId;
-  const domain = {
-    name: signingDomain,
-    version: signatureVersion,
-    verifyingContract: userIdentityNFT.address,
-    chainId,
-  };
-  const types = {
-    createUserId: [
-      { name: "uri", type: "string" },
-      { name: "userId", type: "bytes" },
-      { name: "fingerPrint", type: "bytes" },
-    ],
-  };
-  // console.log("types", types);
-
-  const signature = await (signer as VoidSigner)._signTypedData(domain, types, voucher);
-  const _voucher = {
-    ...voucher,
-    signature,
-  };
-  return _voucher;
-}

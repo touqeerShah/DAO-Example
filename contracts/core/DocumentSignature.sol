@@ -15,7 +15,7 @@ contract DocumentSignature is Ownable, IDocumentSignature, EIP712, ERC721URIStor
     mapping(uint256 => DocumentDetials) documentDetials;
     address userIdentityNFT;
     bytes32 public constant CAST_VOTE =
-        keccak256("createDocument(uint256 tokenIds,uint256 documentId,string uri)");
+        keccak256("createDocument(uint256 tokenIds,uint256 documentId)");
 
     modifier onlyDocumentOwner(address owner) {
         if (owner != msg.sender) {
@@ -42,7 +42,7 @@ contract DocumentSignature is Ownable, IDocumentSignature, EIP712, ERC721URIStor
         uint64 signatureEndingingPeriod,
         uint256[] memory partiesTokenId
     ) public {
-        if (ERC721(userIdentityNFT).balanceOf(msg.sender) == 1) {
+        if (ERC721(userIdentityNFT).balanceOf(msg.sender) != 1) {
             revert DocumentSignature__CreatorIdentityNotExit(msg.sender);
         }
         if (signatureEndingingPeriod == signatureStartingPeriod) {
@@ -79,44 +79,48 @@ contract DocumentSignature is Ownable, IDocumentSignature, EIP712, ERC721URIStor
     function processDocument(
         uint256 documentId,
         // uint256[] memory tokenIds,
-        bytes[] memory signatures,
+        bytes[] calldata signatures,
         bool isValidation
     ) public onlyDocumentOwner(documentDetials[documentId].creator) {
         // here we get signature response but oracle from off-chain
-        bool isAllvalid = true;
-        for (uint i = 0; i < documentDetials[documentId].parties.length; i++) {
-            bytes32 digest = _hash(
-                documentDetials[documentId].parties[i].tokenId,
-                documentId,
-                tokenURI(documentDetials[documentId].tokenId)
-            );
-            address signer = ECDSA.recover(digest, signatures[i]);
-            if (
-                isValidation &&
-                signer !=
-                ERC721(userIdentityNFT).ownerOf(documentDetials[documentId].parties[i].tokenId)
-            ) {
-                revert DocumentSignature__InValidSignature(
-                    documentDetials[documentId].parties[i].tokenId
+        DocumentState status = getStatus(documentId);
+        if (status == DocumentState.Queued) {
+            bool isAllvalid = true;
+            for (uint i = 0; i < documentDetials[documentId].parties.length; i++) {
+                address signer = verifification(
+                    documentDetials[documentId].parties[i].tokenId,
+                    documentId,
+                    signatures[i]
                 );
+                if (
+                    isValidation &&
+                    signer !=
+                    ERC721(userIdentityNFT).ownerOf(documentDetials[documentId].parties[i].tokenId)
+                ) {
+                    revert DocumentSignature__InValidSignature(
+                        documentDetials[documentId].parties[i].tokenId
+                    );
+                }
+                if (
+                    !isValidation &&
+                    signer !=
+                    ERC721(userIdentityNFT).ownerOf(documentDetials[documentId].parties[i].tokenId)
+                ) {
+                    documentDetials[documentId].parties[i].status = SignatureStatus.InValid;
+                    isAllvalid = false;
+                } else {
+                    documentDetials[documentId].parties[i].status = SignatureStatus.Valid;
+                }
             }
-            if (
-                !isValidation &&
-                signer !=
-                ERC721(userIdentityNFT).ownerOf(documentDetials[documentId].parties[i].tokenId)
-            ) {
-                documentDetials[documentId].parties[i].status = SignatureStatus.InValid;
-                isAllvalid = false;
+            if (isAllvalid) {
+                documentDetials[documentId].status = DocumentState.Succeeded;
             } else {
-                documentDetials[documentId].parties[i].status = SignatureStatus.Valid;
+                documentDetials[documentId].status = DocumentState.Executed;
             }
-        }
-        if (isAllvalid) {
-            documentDetials[documentId].status = DocumentState.Succeeded;
+            emit DocumentProcess(documentId, isValidation);
         } else {
-            documentDetials[documentId].status = DocumentState.Executed;
+            revert DocumentSignature__NotProcessBecauseNotInQueue();
         }
-        emit DocumentProcess(documentId, isValidation);
     }
 
     function getDocumentDetails(uint256 documentId) public view returns (DocumentDetials memory) {
@@ -176,12 +180,17 @@ contract DocumentSignature is Ownable, IDocumentSignature, EIP712, ERC721URIStor
         return toUint64(block.number);
     }
 
-    function _hash(
-        uint256 tokenIds,
+    function verifification(
+        uint256 tokenId,
         uint256 documentId,
-        string memory uri
-    ) internal view returns (bytes32) {
-        return _hashTypedDataV4(keccak256(abi.encode(CAST_VOTE, tokenIds, documentId, uri)));
+        bytes calldata signature
+    ) public view returns (address) {
+        bytes32 digest = _hash(tokenId, documentId);
+        return ECDSA.recover(digest, signature);
+    }
+
+    function _hash(uint256 tokenIds, uint256 documentId) internal view returns (bytes32) {
+        return _hashTypedDataV4(keccak256(abi.encode(CAST_VOTE, tokenIds, documentId)));
     }
 
     function _documentId(

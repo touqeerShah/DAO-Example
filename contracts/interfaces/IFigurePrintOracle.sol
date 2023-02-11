@@ -14,6 +14,11 @@ interface IFigurePrintOracle {
     event ReceivedCalled(address indexed buyer, uint256 indexed amount);
     event FallbackCalled(address indexed buyer, uint256 indexed amount);
     event WithDrawAmount(address indexed buyer, uint256 indexed amount);
+    event SetChainLinkToken(address indexed linkToken);
+    event SetChainLinkOracle(address indexed oricle);
+    event SetJobId(bytes32 indexed jobId);
+    event SetFee(uint256 indexed fee);
+    event SetVeriferRole(address indexed verifer);
 
     // Error
     error FigurePrintOracle__RequestAlreadyExist(address userAddress);
@@ -31,7 +36,7 @@ interface IFigurePrintOracle {
 
     function withdrawLink() external payable;
 
-    function getUserRecord(address userAddress) external returns (VerifcaitonRecord calldata);
+    function getUserRecord(address userAddress) external view returns (VerficationStatus);
 
     function getUserVerification(address userAddress) external returns (bool);
 
@@ -44,6 +49,16 @@ interface IFigurePrintOracle {
     function setFee(uint256 _fee) external;
 
     function setVeriferRole(address verifer) external;
+
+    function getChainLinkToken() external view returns (address);
+
+    function getChainLinkOracle() external view returns (address);
+
+    function getJobId() external view returns (bytes32);
+
+    function getFee() external view returns (uint256);
+
+    function getVerifier() external view returns (bool);
 
     function burnUserRecord(address userAddress) external;
 }

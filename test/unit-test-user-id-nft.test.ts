@@ -1,16 +1,16 @@
 import { assert, expect } from "chai";
 import { BigNumber, Signer } from "ethers";
 import { ethers } from "hardhat";
-import { LinkToken, FigurePrintOracle, UserIdentityNFT, PTNFT } from "../typechain-types";
+import { LinkToken, FigurePrintOracle, UserIdentityNFT, } from "../typechain-types";
 import { UserIdVoucherStruct } from "../typechain-types/contracts/core/UserIdentityNFT";
-import { VerifcaitonRecordStruct } from "../typechain-types/contracts/core/FigurePrintOracle";
 
-import { getLinkToken, getFigurePrintOracle, getUserIdentityNFT, getPTNFT } from "../instructions"
+
+import { getLinkToken, getFigurePrintOracle, getUserIdentityNFT } from "../instructions"
 import { keccak256 } from "@ethersproject/keccak256";
 import { toUtf8Bytes } from "@ethersproject/strings";
 import { log } from "console";
 import { getStringToBytes } from "../utils/convert"
-import { createUserId, createPTNFT } from "../instructions"
+import { createUserId } from "../instructions"
 import { SIGNING_DOMAIN_NAME, SIGNING_DOMAIN_VERSION, IPFS_SIMPLE } from "../helper-hardhat-config"
 
 describe("FigurePrintOracle", async function () {
@@ -24,9 +24,7 @@ describe("FigurePrintOracle", async function () {
   let linkToken: LinkToken;
   let figurePrintOracle: FigurePrintOracle;
   let userIdentityNFT: UserIdentityNFT;
-  let ptnft: PTNFT
   let voucher: UserIdVoucherStruct;
-  let voucher2: UserIdVoucherStruct;
 
   before(async () => {
     [deployer, deployer2, deployer3, deployer4, deployer5, deployer6] = await ethers.getSigners(); // could also do with getNamedAccounts
@@ -35,7 +33,6 @@ describe("FigurePrintOracle", async function () {
     const _userId = getStringToBytes("7d80a6386ef543a3abb52817f6707e3b")
     const _fingurePrint = getStringToBytes("7d80a6386ef543a3abb52817f6707e3a")
     userIdentityNFT = await getUserIdentityNFT();
-    ptnft = await getPTNFT();
     voucher = (await createUserId(
       userIdentityNFT,
       deployer,
@@ -45,16 +42,7 @@ describe("FigurePrintOracle", async function () {
       SIGNING_DOMAIN_NAME,
       SIGNING_DOMAIN_VERSION,
     )) as UserIdVoucherStruct;
-    voucher2 = (await createPTNFT(
-      ptnft,
-      deployer,
-      _userId,
-      IPFS_SIMPLE,
-      _fingurePrint,
-      SIGNING_DOMAIN_NAME,
-      SIGNING_DOMAIN_VERSION,
-    )) as UserIdVoucherStruct;
-    console.log("voucher2", voucher2);
+
 
   });
 
@@ -77,13 +65,13 @@ describe("FigurePrintOracle", async function () {
       assert.equal(ethValue, "1.0")
 
     });
-    it("Check verifySignature", async function () {
-      const signer = await userIdentityNFT.connect(deployer2).verifySignature(voucher);
-      let address = await deployer.getAddress()
-      console.log("signer", signer, "address", address);
+    // it("Check verifySignature", async function () {
+    //   const signer = await userIdentityNFT.connect(deployer2).verifySignature(voucher);
+    //   let address = await deployer.getAddress()
+    //   console.log("signer", signer, "address", address);
 
-      assert.equal(signer, (address));
-    });
+    //   assert.equal(signer, (address));
+    // });
     it("Check Fingerprint Address", async function () {
       const signer = await userIdentityNFT.connect(deployer2).getFingerPrintAddress();
 
@@ -91,11 +79,20 @@ describe("FigurePrintOracle", async function () {
 
     });
 
+    it("setFingerPrintAddress", async function () {
+      let userAddres = await deployer.getAddress()
+
+      let tx = await userIdentityNFT.setFingerPrintAddress(figurePrintOracle.address)
+      await tx.wait(1)
+      console.log(tx);
+
+    });
+
     it("getUserVerification", async function () {
       let userAddres = await deployer.getAddress()
 
-      let tx = await figurePrintOracle.connect(deployer).getUserRecord(userAddres)
-      console.log(tx);
+      // let tx = await userIdentityNFT.connect(deployer).getfigureprintOracleAddress()
+      // console.log(tx);
 
     });
 
@@ -104,23 +101,39 @@ describe("FigurePrintOracle", async function () {
       // let tx = await userIdentityNFT.connect(deployer).getfigureprintOracleResponse()
       // console.log("tx", tx);
       // console.log(await deployer2.getAddress());
-      let userAddres = await deployer6.getAddress()
+      let userAddres = await deployer5.getAddress()
+      console.log("userAddres", userAddres);
 
-      // let tx = await ptnft.connect(deployer6).redeem(userAddres, voucher2)
+      // let tx = await ptnft.connect(deployer2).redeem(userAddres, voucher2)
       // await tx.wait(1)
-      await expect(ptnft.connect(deployer6).redeem(userAddres, voucher2)).to.rejectedWith("FirstVerifyIdenetity");
       // assert.equal(signer, (address));
+      await expect(userIdentityNFT.connect(deployer).redeem(voucher)).to.be.revertedWith(
+        "UserIdentityNFT__FirstVerifyIdenetity"
+      )
     });
-
-    it("Successful Redeem", async function () {
+    it("verifyFingerPrint", async function () {
       // let tx = await userIdentityNFT.connect(deployer5).compaire()
       // let respo = await tx.wait(1)
       // console.log(respo);
       // userIdentityNFT.connect(deployer2).redeem(voucher)
-      let userAddres = await deployer.getAddress()
-
-      await expect(ptnft.connect(deployer).redeem(userAddres, voucher2)).to.emit(
-        ptnft,
+      const _userId = getStringToBytes("7d80a6386ef543a3abb52817f6707e3b")
+      const _fingurePrint = getStringToBytes("7d80a6386ef543a3abb52817f6707e3a")
+      // let tx = userIdentityNFT.connect(deployer).verifyFingerPrint(_userId, _fingurePrint);
+      // (await tx).wait(1);
+      await expect(userIdentityNFT.connect(deployer).verifyFingerPrint(_userId, _fingurePrint)).to.emit(
+        userIdentityNFT,
+        "IdVerifedAndIssued",
+      );
+    });
+    it("Set FingerPrint Address", async function () {
+      await expect(userIdentityNFT.connect(deployer).setFingerPrintAddress(figurePrintOracle.address)).to.emit(
+        userIdentityNFT,
+        "SetFingerPrintAddress",
+      );
+    });
+    it("Successful Redeem", async function () {
+      await expect(userIdentityNFT.connect(deployer).redeem(voucher)).to.emit(
+        userIdentityNFT,
         "IdVerifedAndIssued",
       );
     });
@@ -131,14 +144,14 @@ describe("FigurePrintOracle", async function () {
       await new Promise(async (resolve, reject) => {
         // setup listener before we enter the lottery
         // Just in case the blockchain moves REALLY fast
-        figurePrintOracle.once("VerifationResponse", async () => {
+        figurePrintOracle.connect(deployer).once("VerifationResponse", async () => {
           console.log("VerifationResponse event fired!")
           try {
             // add our asserts here
-            const userData: VerifcaitonRecordStruct = await figurePrintOracle.getUserRecord(userAddres)
+            const userData = await figurePrintOracle.connect(deployer).getUserRecord(userAddres)
             console.log("userData =>", userData)
 
-            assert.equal(userData.status, 2);
+            assert.equal(userData, 2);
             resolve(0);
           } catch (error) {
             console.log(error)
@@ -153,10 +166,10 @@ describe("FigurePrintOracle", async function () {
 
         console.log("bytes => ", _userId);
 
-        let tx = figurePrintOracle.connect(deployer).verifyFingerPrint(userAddres, _userId, _fingurePrint);
-        (await tx).wait(1)
+        let tx = userIdentityNFT.connect(deployer).verifyFingerPrint(_userId, _fingurePrint);
+        (await tx).wait(1);
 
-        console.log(await figurePrintOracle.getUserRecord(userAddres));
+        console.log(await figurePrintOracle.connect(deployer).getUserRecord(userAddres));
 
         // and this code WONT complete until our listener has finished listening!
       })

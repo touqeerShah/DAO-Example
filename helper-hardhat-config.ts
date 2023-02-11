@@ -3,7 +3,7 @@ export interface networkConfigItem {
     ethUsdPriceFeed?: string
     blockConfirmations?: number
     linkToken?: string
-    oricle?: string
+    oricle?: string | ""
 }
 
 export interface networkConfigInfo {
@@ -14,7 +14,7 @@ export const networkConfig: networkConfigInfo = {
     localhost: {},
     hardhat: {},
     goerli: {
-        blockConfirmations: 4,
+        blockConfirmations: 5,
         linkToken: "0x326C977E6efc84E512bB9C30f76E30c160eD06FB",
         oricle: "0xCC79157eb46F5624204f47AB42b3906cAA40eaB7",
     },

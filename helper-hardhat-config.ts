@@ -35,8 +35,10 @@ export const ADDRESS_ZERO = "0x0000000000000000000000000000000000000000"
 
 export const NEW_STORE_VALUE = 77
 export const FUNC = "setUrl"
-export const PROPOSAL_DESCRIPTION = "Proposal #1 77 in the Box!"
+export const PROPOSAL_DESCRIPTION = "Proposal #1 Update Orcale endpint!"
 export const ORCALE_URL_PROVIDER = process.env.OrcaleUrlProvider || "";
+export const ORCALE_URL_PROVIDER2 = "https://user-id/explorer/";
+
 export const JOB_ID = "7d80a6386ef543a3abb52817f6707e3b"
 export const SIGNING_DOMAIN_NAME = "User-Identity"
 export const SIGNING_DOMAIN_VERSION = "1"

@@ -3,7 +3,7 @@ import { DeployFunction } from "hardhat-deploy/types"
 import verify from "../instructions/verify-code"
 import { networkConfig, developmentChains, DS_SIGNING_DOMAIN_NAME, contractAddressFile, DS_SIGNING_DOMAIN_VERSION, DS_NFT_NAME, DS_NFT_SYMBOL } from "../helper-hardhat-config"
 import { ethers } from "hardhat"
-import { storeProposalId } from "./../utils/storeContractAddress"
+import { storeProposalId } from "../utils/storeContractAddress"
 
 const deployDocumentSignature: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     let { network, deployments, getNamedAccounts } = hre

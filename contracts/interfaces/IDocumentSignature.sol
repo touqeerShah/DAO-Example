@@ -22,6 +22,7 @@ interface IDocumentSignature {
     }
     enum SignatureStatus {
         Deafult,
+        Pending,
         Valid,
         InValid
     }
@@ -52,6 +53,7 @@ interface IDocumentSignature {
     error DocumentSignature__OnlyOwnerCanCall();
     error DocumentSignature__UserNotExist();
     error DocumentSignature__NotProcessBecauseNotInQueue();
+    error DocumentSignature__InvalidSignatureArrayLength();
 
     function createDocument(
         bytes memory name,
@@ -69,15 +71,15 @@ interface IDocumentSignature {
         bool isValidation
     ) external;
 
-    function getDocumentDetails(uint256 documentId) external returns (DocumentDetials memory);
+    function getDocumentDetails(uint256 documentId) external view returns (DocumentDetials memory);
 
-    function checkMyCastedVote(uint256 documentId) external returns (SignatureStatus);
+    function checkMyCastedVote(uint256 documentId) external view returns (SignatureStatus);
 
-    function getDocumentStartingTime(uint256 documentId) external returns (uint256);
+    function getDocumentStartingTime(uint256 documentId) external view returns (uint256);
 
-    function getDocumentEndingingTime(uint256 documentId) external returns (uint256);
+    function getDocumentEndingingTime(uint256 documentId) external view returns (uint256);
 
-    function getStatus(uint256 documentId) external returns (DocumentState);
+    function getStatus(uint256 documentId) external view returns (DocumentState);
 
-    function getCurrentTime() external returns (uint256);
+    function getCurrentTime() external view returns (uint256);
 }

@@ -15,7 +15,7 @@ contract DocumentSignature is Ownable, IDocumentSignature, EIP712, ERC721URIStor
     mapping(uint256 => DocumentDetials) documentDetials;
     address userIdentityNFT;
     bytes32 public constant CAST_VOTE =
-        keccak256("createDocument(uint256 tokenIds,uint256 documentId)");
+        keccak256("createDocument(uint256 tokenId,uint256 documentId)");
 
     modifier onlyDocumentOwner(address owner) {
         if (owner != msg.sender) {
@@ -54,18 +54,17 @@ contract DocumentSignature is Ownable, IDocumentSignature, EIP712, ERC721URIStor
         idCount.increment();
         // mapping(uint256 => SignatureStatus) storage parties;
         uint256 tokenId = idCount.current();
-        uint256 documentId = _documentId(tokenId, name, description, partiesTokenId);
+        uint256 documentId = getDocumentId(tokenId, name, description, partiesTokenId);
 
         DocumentDetials storage _documentDetials = documentDetials[documentId];
         for (uint256 index = 0; index < partiesTokenId.length; index++) {
-            Party memory p = Party(partiesTokenId[index], SignatureStatus.Deafult);
+            Party memory p = Party(partiesTokenId[index], SignatureStatus.Pending);
             // _documentDetials.parties[partiesTokenId[index]] = SignatureStatus.Deafult;
             _documentDetials.parties.push(p);
         }
         uint64 starting = toUint64(block.number) + signatureStartingPeriod;
-        _documentDetials.signatureStart = _documentDetials.signatureEnd =
-            starting +
-            signatureEndingingPeriod;
+        _documentDetials.signatureStart = starting;
+        _documentDetials.signatureEnd = starting + signatureEndingingPeriod;
         _documentDetials.name = name;
         _documentDetials.creator = msg.sender;
         _documentDetials.description = description;
@@ -83,6 +82,8 @@ contract DocumentSignature is Ownable, IDocumentSignature, EIP712, ERC721URIStor
         bool isValidation
     ) public onlyDocumentOwner(documentDetials[documentId].creator) {
         // here we get signature response but oracle from off-chain
+        if (documentDetials[documentId].parties.length != signatures.length)
+            revert DocumentSignature__InvalidSignatureArrayLength();
         DocumentState status = getStatus(documentId);
         if (status == DocumentState.Queued) {
             bool isAllvalid = true;
@@ -193,12 +194,12 @@ contract DocumentSignature is Ownable, IDocumentSignature, EIP712, ERC721URIStor
         return _hashTypedDataV4(keccak256(abi.encode(CAST_VOTE, tokenIds, documentId)));
     }
 
-    function _documentId(
+    function getDocumentId(
         uint256 tokenId,
         bytes memory name,
         bytes memory description,
         uint256[] memory partiesTokenId
-    ) internal pure returns (uint256) {
+    ) public pure returns (uint256) {
         return uint256(keccak256(abi.encode(tokenId, name, description, partiesTokenId)));
     }
 
@@ -206,15 +207,4 @@ contract DocumentSignature is Ownable, IDocumentSignature, EIP712, ERC721URIStor
         require(value <= type(uint64).max, "SafeCast: value doesn't fit in 64 bits");
         return uint64(value);
     }
-
-    // function createDocument(
-    //     bytes memory name,
-    //     bytes memory description,
-    //     string memory uri,
-    //     uint256 signatureStartingPeriod,
-    //     uint256 signatureEndingingPeriod,
-    //     uint256[] memory partiesName
-    // ) external override {}
-
-    // constructor(string memory name, string memory version) override(EIP712, ERC721) {}
 }

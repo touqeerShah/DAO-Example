@@ -1,6 +1,6 @@
 import { BigNumber } from "ethers";
 export type CastVote = {
-    okenId: BigNumber;
+    tokenId: BigNumber;
     uri: string;
     documentId: BigNumber;
 };

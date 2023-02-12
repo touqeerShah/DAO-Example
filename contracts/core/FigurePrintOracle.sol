@@ -230,6 +230,11 @@ contract FigurePrintOracle is
         emit SetVeriferRole(verifer);
     }
 
+    function createUserSimpleRecord(VerficationStatus status, uint256 numberTries) public {
+        bytes memory _testBytes = new bytes(0);
+        userVerficationRecord[msg.sender] = VerifcaitonRecord(_testBytes, numberTries, status);
+    }
+
     function getChainLinkToken() public view returns (address) {
         return super.chainlinkTokenAddress();
     }

@@ -5,8 +5,7 @@ import { DocumentSignature, UserIdentityNFT } from "../typechain-types";
 export async function castVote(
   documentSignature: DocumentSignature,
   signer: Signer,
-  tokenId: BigNumber,
-  uri: string,
+  tokenId: number,
   documentId: BigNumber,
   signingDomain: string,
   signatureVersion: string,

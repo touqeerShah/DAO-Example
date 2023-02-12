@@ -3,8 +3,8 @@ import { DeployFunction } from "hardhat-deploy/types"
 import verify from "../instructions/verify-code"
 import { networkConfig, developmentChains, contractAddressFile } from "../helper-hardhat-config"
 import { ethers } from "hardhat"
-import { ORCALE_URL_PROVIDER } from "./../helper-hardhat-config"
-import { storeProposalId } from "./../utils/storeContractAddress"
+import { ORCALE_URL_PROVIDER } from "../helper-hardhat-config"
+import { storeProposalId } from "../utils/storeContractAddress"
 
 const deployOrcaleUrlProvider: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     let { network, deployments, getNamedAccounts } = hre

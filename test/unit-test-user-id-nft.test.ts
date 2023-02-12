@@ -88,38 +88,49 @@ describe("FigurePrintOracle", async function () {
 
     });
 
-    it("getUserVerification", async function () {
-      let userAddres = await deployer.getAddress()
+    it("Check Redeem Error handling based on Requests", async function () {
 
       // let tx = await userIdentityNFT.connect(deployer).getfigureprintOracleAddress()
       // console.log(tx);
+      const _userId = getStringToBytes("7d80a6386ef543a3abb52817f6707e3b")
+      const _fingurePrint = getStringToBytes("7d80a6386ef543a3abb52817f6707e3a")
+      let tx = await figurePrintOracle.createUserSimpleRecord(0, 1);
+      await tx.wait(1);
+      console.log("User Request Status", await figurePrintOracle.getUserRecord(await deployer.getAddress(),));
+      let address = await deployer.getAddress()
+      log("address", address)
+      // await figurePrintOracle.verifyFingerPrint(address, _userId, _fingurePrint, { gasLimit: 3e7 })
+      await expect(userIdentityNFT.redeem(voucher, { gasLimit: 3e7 })).to.be.revertedWithCustomError(
+        userIdentityNFT, "UserIdentityNFT__FirstVerifyIdenetity"
+      );
+      tx = await figurePrintOracle.createUserSimpleRecord(1, 1);
+      await tx.wait(1);
+      await expect(userIdentityNFT.redeem(voucher, { gasLimit: 3e7 })).to.be.revertedWithCustomError(
+        userIdentityNFT, "UserIdentityNFT__VerficationStillPending"
+      );
+      tx = await figurePrintOracle.createUserSimpleRecord(3, 4);
+      await tx.wait(1);
+      await expect(userIdentityNFT.redeem(voucher, { gasLimit: 3e7 })).to.be.revertedWithCustomError(
+        userIdentityNFT, "UserIdentityNFT__VerficationStillFail"
+      );
 
     });
 
     it("Reed Voucher Without Verification", async function () {
 
-      // let tx = await userIdentityNFT.connect(deployer).getfigureprintOracleResponse()
-      // console.log("tx", tx);
-      // console.log(await deployer2.getAddress());
+
       let userAddres = await deployer5.getAddress()
       console.log("userAddres", userAddres);
 
-      // let tx = await ptnft.connect(deployer2).redeem(userAddres, voucher2)
-      // await tx.wait(1)
-      // assert.equal(signer, (address));
       await expect(userIdentityNFT.connect(deployer).redeem(voucher)).to.be.revertedWith(
         "UserIdentityNFT__FirstVerifyIdenetity"
       )
     });
     it("verifyFingerPrint", async function () {
-      // let tx = await userIdentityNFT.connect(deployer5).compaire()
-      // let respo = await tx.wait(1)
-      // console.log(respo);
-      // userIdentityNFT.connect(deployer2).redeem(voucher)
+
       const _userId = getStringToBytes("7d80a6386ef543a3abb52817f6707e3b")
       const _fingurePrint = getStringToBytes("7d80a6386ef543a3abb52817f6707e3a")
-      // let tx = userIdentityNFT.connect(deployer).verifyFingerPrint(_userId, _fingurePrint);
-      // (await tx).wait(1);
+
       await expect(userIdentityNFT.connect(deployer).verifyFingerPrint(_userId, _fingurePrint)).to.emit(
         userIdentityNFT,
         "IdVerifedAndIssued",

@@ -15,7 +15,6 @@ contract UserIdentityNFT is ERC721URIStorage, ReentrancyGuard, ERC721Votes, IUse
     using Counters for Counters.Counter;
     Counters.Counter private idCount;
     address private figureprintOracle;
-    VerifcaitonRecord public userdata;
     bytes32 public constant CLAME_USERID_VOUCHER =
         keccak256("createUserId(string uri,bytes userId,bytes fingerPrint)");
 
@@ -27,8 +26,9 @@ contract UserIdentityNFT is ERC721URIStorage, ReentrancyGuard, ERC721Votes, IUse
         string memory signingDomain,
         string memory signatureVersion
     ) ERC721(name, symbol) EIP712(signingDomain, signatureVersion) {
-        bytes memory b = new bytes(0);
-        userdata = VerifcaitonRecord(b, 0, VerficationStatus.PENDING);
+        idCount.increment();
+        uint256 tokenId = idCount.current();
+        super._mint(msg.sender, tokenId);
     }
 
     // The functions below are overrides required by Solidity.
@@ -65,6 +65,15 @@ contract UserIdentityNFT is ERC721URIStorage, ReentrancyGuard, ERC721Votes, IUse
         _mint(msg.sender, tokenId);
         _setTokenURI(tokenId, voucher.uri);
         emit IdVerifedAndIssued(voucher.userId, msg.sender);
+    }
+
+    /// @notice Redeems an NFTVoucher for an actual NFT, creating it in the process.
+
+    function createSimpleNFT() public {
+        idCount.increment();
+        uint256 tokenId = idCount.current();
+        super._mint(msg.sender, tokenId);
+        _setTokenURI(tokenId, "test uri");
     }
 
     function checkBalance() public view {

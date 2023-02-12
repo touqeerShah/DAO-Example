@@ -4,13 +4,14 @@ import verify from "../instructions/verify-code"
 import { networkConfig, developmentChains, contractAddressFile, QUORUM_PERCENTAGE, VOTING_DELAY, VOTING_PERIOD, ADDRESS_ZERO } from "../helper-hardhat-config"
 
 import { storeProposalId } from "./../utils/storeContractAddress"
+import { getTimeLock, getUserIdentityNFT } from "../instructions"
 
 const deployGovernorContract: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     let { network, deployments, getNamedAccounts } = hre
     let { deploy, log, get } = deployments
     let { deployer, } = await getNamedAccounts();
-    let timelock = await get("TimeLock");
-    let token = await get("FigurePrintOracle");
+    let timelock = await getTimeLock();
+    let token = await getUserIdentityNFT();
     log("timelock === ", timelock.address)
     log("token === ", token.address)
 

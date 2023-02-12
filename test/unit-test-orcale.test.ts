@@ -81,22 +81,7 @@ describe("FigurePrintOracle", async function () {
       assert.equal(_isValid, true)
 
     })
-    it("Request Already Exist FingurePrint from Orcale", async () => {
-      const checkData = ethers.utils.keccak256(ethers.utils.toUtf8Bytes("data"))
-      console.log(checkData);
 
-      const _userId = getStringToBytes("7d80a6386ef543a3abb52817f6707e3b")
-      const _fingurePrint = getStringToBytes("7d80a6386ef543a3abb52817f6707e3a")
-      // let tx = await figurePrintOracle.connect(deployer).verifyFingerPrint(await deployer.getAddress(), _userId, _fingurePrint, { gasLimit: 3e7 });
-      // (await tx).wait(1)
-
-      console.log(await figurePrintOracle.getUserRecord(await deployer.getAddress(),));
-      let address = await deployer.getAddress()
-      expect(await figurePrintOracle.verifyFingerPrint(address, _userId, _fingurePrint, { gasLimit: 3e7 })).to.be.revertedWith(
-        "FigurePrintOracle__RequestAlreadyExist"
-      )
-
-    })
     it("Check URL", async () => {
       let URL = await figurePrintOracle.connect(deployer).getBaseURI();
       console.log("URL", URL);
@@ -126,11 +111,34 @@ describe("FigurePrintOracle", async function () {
         "SetFee",
       );
     })
-    it("Set VeriferRole", async () => {
-      await expect(figurePrintOracle.connect(deployer).setVeriferRole(jobId)).to.emit(
-        figurePrintOracle,
-        "SetVeriferRole",
-      );
+
+    it("Check Revert on conditions verification", async () => {
+
+      const _userId = getStringToBytes("7d80a6386ef543a3abb52817f6707e3b")
+      const _fingurePrint = getStringToBytes("7d80a6386ef543a3abb52817f6707e3a")
+      let tx = await figurePrintOracle.createUserSimpleRecord(1, 1);
+      await tx.wait(1);
+
+      console.log("User Request Status", await figurePrintOracle.getUserRecord(await deployer.getAddress(),));
+
+
+      let address = await deployer.getAddress()
+      log("address", address)
+      // await figurePrintOracle.verifyFingerPrint(address, _userId, _fingurePrint, { gasLimit: 3e7 })
+      await expect(figurePrintOracle.verifyFingerPrint(address, _userId, _fingurePrint, { gasLimit: 3e7 })).to.be.revertedWithCustomError(
+        figurePrintOracle, "FigurePrintOracle__RequestAlreadyExist"
+      ).withArgs(address)
+      tx = await figurePrintOracle.createUserSimpleRecord(2, 1);
+      await tx.wait(1);
+      await expect(figurePrintOracle.verifyFingerPrint(address, _userId, _fingurePrint, { gasLimit: 3e7 })).to.be.revertedWithCustomError(
+        figurePrintOracle, "FigurePrintOracle__VerficationAlreadyDone"
+      ).withArgs(address)
+      tx = await figurePrintOracle.createUserSimpleRecord(3, 4);
+      await tx.wait(1);
+      await expect(figurePrintOracle.verifyFingerPrint(address, _userId, _fingurePrint, { gasLimit: 3e7 })).to.be.revertedWithCustomError(
+        figurePrintOracle, "FigurePrintOracle__ExceedNumberTries"
+      ).withArgs(address)
+
     })
   });
 

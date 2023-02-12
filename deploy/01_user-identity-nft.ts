@@ -11,6 +11,7 @@ const deployUserIdentityNFT: DeployFunction = async function (hre: HardhatRuntim
     let { deployer, } = await getNamedAccounts();
 
     log("Deploying User Identity NFT  Contract .... ")
+    log(deployer)
     const UserIdentityNFT = await deploy("UserIdentityNFT", {
         from: deployer,
         args: [NFT_NAME, NFT_SYMBOL, SIGNING_DOMAIN_NAME, SIGNING_DOMAIN_VERSION],
@@ -19,12 +20,21 @@ const deployUserIdentityNFT: DeployFunction = async function (hre: HardhatRuntim
         waitConfirmations: networkConfig[network.name].blockConfirmations || 1,
     })
     await storeProposalId(UserIdentityNFT.address, "UserIdentityNFT", contractAddressFile)
+    await delegate(UserIdentityNFT.address, deployer)
 
     log(`UserIdentityNFT at ${UserIdentityNFT.address}`)
     if (!developmentChains.includes(network.name) && process.env.ETHERSCANAPIKEY) {
         await verify(UserIdentityNFT.address, [NFT_NAME, NFT_SYMBOL, SIGNING_DOMAIN_NAME, SIGNING_DOMAIN_VERSION])
     }
 
+}
+
+
+async function delegate(address: string, deployer: string) {
+    const token = await ethers.getContractAt("UserIdentityNFT", address)
+    const tx = await token.delegate(deployer)
+    await tx.wait(1)
+    console.log(`Checkpoints: ${await token.getVotes(deployer)}`)
 }
 
 

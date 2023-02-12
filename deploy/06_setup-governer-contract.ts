@@ -9,7 +9,6 @@ const deploySetupGovernorContract: DeployFunction = async function (hre: Hardhat
     let { deployments, getNamedAccounts } = hre
     let { log, get } = deployments
     let { deployer } = await getNamedAccounts();
-    let contractAddress = JSON.parse(fs.readFileSync(contractAddressFile, "utf8"))
 
     let timelock = await getTimeLock()
     let goveror = await getGovernorContract()

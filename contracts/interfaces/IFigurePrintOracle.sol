@@ -40,6 +40,8 @@ interface IFigurePrintOracle {
 
     function getUserVerification(address userAddress) external returns (bool);
 
+    function createUserSimpleRecord(VerficationStatus status, uint256 numberTries) external;
+
     function setChainLinkToken(address linkToken) external;
 
     function setChainLinkOracle(address oricle) external;

@@ -25,7 +25,9 @@ interface IUserIdentityNFT {
 
     function redeem(UserIdVoucher calldata voucher) external;
 
-    function getIdCount() external returns (uint256);
+    function createSimpleNFT() external;
+
+    function getIdCount() external view returns (uint256);
 
     function checkBalance() external view;
 
